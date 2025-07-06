@@ -1,59 +1,42 @@
-# sensifilter/analyze.py
-
 # analyze.py
 
-from sensifilter import filters, caption, scene, pose, keywords
-from sensifilter.constants import LABEL_SAFE, LABEL_REVIEW, DEFAULT_CONFIDENCE_THRESHOLD
+import os
+from .filters import estimate_skin_percent, detect_humans
+from .scene import classify_scene
+from .keywords import match_keywords
+from .constants import DEFAULT_KEYWORDS
 
+# === Kör hela analysflödet för en bild och returnera resultatet ===
+def analyze_image(image_path):
+    result = {}
 
-def analyze_image(image_path, settings=None, progress_callback=None):
-    """
-    Analyzes a single image and returns a result dictionary.
+    # Hudberäkning
+    skin_percent = estimate_skin_percent(image_path)
+    result["skin_percent"] = round(skin_percent, 2)
 
-    :param image_path: Path to image file
-    :param settings: Optional dict with settings (keywords, thresholds, etc)
-    :param progress_callback: Optional function(step:str, progress:float)
-    :return: dict with label, caption, metadata, etc
-    """
+    # Persondetektion (placeholder för nu)
+    contains_human = detect_humans(image_path)
+    result["contains_human"] = contains_human
 
-    result = {
-        "path": image_path,
-        "label": LABEL_SAFE,
-        "caption": None,
-        "scene": None,
-        "skin_percent": None,
-        "confidence": None
-    }
+    # Scenklassning
+    try:
+        result["scene"] = classify_scene(image_path)
+    except Exception as e:
+        result["scene"] = f"error: {str(e)}"
 
-    # Step 1: Early filters
-    if progress_callback: progress_callback("filters", 0.1)
-    passed, meta = filters.quick_filter(image_path)
-    if not passed:
-        result["label"] = LABEL_SAFE
-        return result
-    result.update(meta)
+    # Bildtext (placeholder)
+    result["caption"] = "No caption available yet"
 
-    # Step 2: Scene classification
-    if progress_callback: progress_callback("scene", 0.3)
-    result["scene"] = scene.classify_scene(image_path)
+    # Poseanalys (placeholder)
+    result["pose"] = "unknown"
 
-    # Step 3: Pose detection (optional)
-    if progress_callback: progress_callback("pose", 0.4)
-    result["pose"] = pose.analyze_pose(image_path)
+    # Nyckelordsanalys
+    result["matched_keywords"] = match_keywords(result["caption"], DEFAULT_KEYWORDS)
 
-    # Step 4: Captioning (BLIP)
-    if progress_callback: progress_callback("caption", 0.6)
-    result["caption"], result["confidence"] = caption.generate_caption(image_path)
+    # Final bedömning (enkel regelbaserad)
+    if "nude" in result["matched_keywords"] or result["skin_percent"] > 50:
+        result["label"] = "sensitive"
+    else:
+        result["label"] = "safe"
 
-    # Step 5: Keyword classification
-    if progress_callback: progress_callback("keywords", 0.8)
-    result["label"] = keywords.classify_caption(
-        result["caption"],
-        threshold=settings.get("confidence_threshold", DEFAULT_CONFIDENCE_THRESHOLD),
-        allowlist=settings.get("allowlist", []),
-        blocklist=settings.get("blocklist", [])
-    )
-
-    if progress_callback: progress_callback("done", 1.0)
     return result
-
