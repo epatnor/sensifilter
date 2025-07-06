@@ -2,7 +2,10 @@
 
 import os
 from . import scene, utils, keywords, filters, caption, pose
-from sensifilter.constants import KEYWORDS_NUDITY + KEYWORDS_VIOLENCE + KEYWORDS_OTHER
+from sensifilter.constants import KEYWORDS_NUDITY, KEYWORDS_VIOLENCE, KEYWORDS_OTHER
+
+# Kombinera alla känsliga nyckelord till en lista
+ALL_SENSITIVE_KEYWORDS = KEYWORDS_NUDITY + KEYWORDS_VIOLENCE + KEYWORDS_OTHER
 
 # === Main analysis function ===
 def analyze_image(image_path, settings):
@@ -33,7 +36,7 @@ def analyze_image(image_path, settings):
     if settings.get("enable_keyword_filter", True):
         try:
             caption_text = result["caption"][0] if isinstance(result["caption"], tuple) else ""
-            result["keywords"] = keywords.match_keywords(caption_text, KEYWORDS_NUDITY + KEYWORDS_VIOLENCE + KEYWORDS_OTHER)
+            result["keywords"] = keywords.match_keywords(caption_text, ALL_SENSITIVE_KEYWORDS)
         except Exception as e:
             result["keywords"] = [f"Error: {e}"]
 
