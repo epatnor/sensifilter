@@ -10,30 +10,26 @@ IF NOT EXIST .venv (
     python -m venv .venv
 )
 
-REM === Aktivera venv ===
-call .venv\Scripts\activate.bat
-
-REM === Kontrollera om streamlit är installerat ===
-where streamlit >nul 2>&1
+REM === Installera krav om streamlit saknas i venv ===
+.\.venv\Scripts\python.exe -m pip show streamlit >nul 2>&1
 IF %ERRORLEVEL% NEQ 0 (
     echo Installing requirements...
-    python -m pip install --upgrade pip
-    pip install -r requirements.txt
+    .\.venv\Scripts\python.exe -m pip install --upgrade pip
+    .\.venv\Scripts\pip.exe install -r requirements.txt
 )
-
-REM === Kör test_ui.py ===
-echo.
-echo ✅ Environment ready. Starting Sensifilter UI...
-echo.
 
 REM === Döda ev. hängande streamlit-processer ===
 for /f "tokens=2 delims=," %%a in ('tasklist /FI "IMAGENAME eq python.exe" /FI "WINDOWTITLE eq streamlit*" /FO CSV ^| find /I "python.exe"') do (
     taskkill /PID %%a /F >nul 2>&1
 )
 
-python -m streamlit run test_ui.py
+REM === Kör test_ui.py ===
+echo.
+echo ✅ Environment ready. Starting Sensifilter UI...
+echo.
+start "" http://localhost:8501
+.\.venv\Scripts\python.exe -m streamlit run test_ui.py --server.headless=true --browser.serverAddress=localhost
 
-REM === Återställ prompt ===
 echo.
 echo Streamlit UI closed. Press any key to exit.
 pause
