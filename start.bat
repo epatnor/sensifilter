@@ -1,6 +1,10 @@
 @echo off
 SETLOCAL
 
+REM === Pull latest changes from GitHub ===
+echo Pulling latest changes...
+git pull origin main
+
 REM === Check if venv exists, else create it ===
 IF NOT EXIST .venv (
     echo Creating virtual environment...
@@ -19,7 +23,7 @@ echo.
 echo ✅ Setup complete!
 echo.
 
-REM === Prompt for UI launch
+REM === Prompt for UI launch ===
 echo Launch test UI?
 choice /M "Start test_ui.py now"
 IF ERRORLEVEL 2 GOTO end
@@ -30,7 +34,7 @@ python -m streamlit run test_ui.py
 
 :end
 echo.
-echo Deactivating venv...
+REM === Deactivate venv ===
 call deactivate
 
 pause
