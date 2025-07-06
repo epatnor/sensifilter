@@ -4,7 +4,8 @@ import os
 from .filters import estimate_skin_percent, detect_humans
 from .scene import classify_scene
 from .keywords import match_keywords
-from .constants import DEFAULT_KEYWORDS
+from .constants import CATEGORY_KEYWORDS
+
 
 # === Kör hela analysflödet för en bild och returnera resultatet ===
 def analyze_image(image_path):
@@ -31,7 +32,8 @@ def analyze_image(image_path):
     result["pose"] = "unknown"
 
     # Nyckelordsanalys
-    result["matched_keywords"] = match_keywords(result["caption"], DEFAULT_KEYWORDS)
+    result["matched_keywords"] = match_keywords(result["caption"], CATEGORY_KEYWORDS.get("nudity", []))
+
 
     # Final bedömning (enkel regelbaserad)
     if "nude" in result["matched_keywords"] or result["skin_percent"] > 50:
