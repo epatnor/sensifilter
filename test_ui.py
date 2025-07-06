@@ -15,7 +15,7 @@ if uploaded_file:
     with open(temp_path, "wb") as f:
         f.write(uploaded_file.getbuffer())
 
-    st.image(temp_path, caption="Selected image", use_column_width=True)
+    st.image(temp_path, caption="Selected image", use_container_width=True)
     st.markdown("### Analyzing...")
 
     # 🔧 Standardinställningar för Sensifilter
@@ -33,10 +33,16 @@ if uploaded_file:
 
         st.markdown("### 🔍 Analysis Result")
         st.write(f"**Label:** `{result.get('label', '-')}`")
-        st.write(f"**Caption:** {result.get('caption', '-')}")        
+
+        caption = result.get("caption", "-")
+        if isinstance(caption, tuple):
+            st.write(f"**Caption:** {caption[0]} ({caption[1]})")
+        else:
+            st.write(f"**Caption:** {caption}")
+
         st.write(f"**Scene:** {result.get('scene', '-')}")
         st.write(f"**Pose:** {result.get('pose', '-')}")
-        st.write(f"**Skin %:** {result.get('skin_percent', '-')}%")
+        st.write(f"**Skin %:** {result.get('skin_percent', '-'):.2f}%")
         st.write(f"**Contains human:** {result.get('contains_human', '-')}")
 
         st.markdown("### 🧾 Raw result")
@@ -45,5 +51,4 @@ if uploaded_file:
     except Exception as e:
         st.error(f"❌ An error occurred during analysis:\n\n{e}")
 
-    # Valfritt: rensa temp
     os.remove(temp_path)
