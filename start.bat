@@ -1,26 +1,29 @@
 @echo off
-echo [🔧] Setting up sensifilter environment...
+SETLOCAL
 
-REM Check if venv exists
-if not exist ".venv\" (
-    echo [📦] Creating virtual environment...
+REM === Check if venv exists, else create it ===
+IF NOT EXIST .venv (
+    echo Creating virtual environment...
     python -m venv .venv
 )
 
-REM Activate venv (Windows)
-call .venv\Scripts\activate.bat
+REM === Activate venv ===
+call .venv\Scripts\activate
 
-REM Upgrade pip
-echo [⬆️ ] Upgrading pip...
-python -m pip install --upgrade pip
-
-REM Install requirements
-echo [📥] Installing dependencies...
+REM === Always install requirements ===
+echo Installing/updating Python packages...
+pip install --upgrade pip >nul
 pip install -r requirements.txt
 
-REM Run preload script (downloads models etc)
-echo [🔽] Downloading models...
-python preload_models.py
+echo.
+echo ✅ Setup complete!
+echo.
 
-echo [✅] Setup complete!
+REM === Optional: prompt for test UI launch ===
+set /p launch_ui=Launch test_ui.py? (y/n): 
+if /I "%launch_ui%"=="y" (
+    python -m streamlit run test_ui.py
+)
+
 pause
+ENDLOCAL
