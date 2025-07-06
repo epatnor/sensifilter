@@ -1,13 +1,17 @@
-# sensifilter/pose.py
+# pose.py
 
 # Pose/context analysis (optional)
-# pose.py
+# Placeholder for future integration with pose models
 
 def analyze_pose(image_path):
     """
-    Placeholder for pose or body context detection.
-    Could detect if person is lying, standing, posing, etc.
+    Stub for pose classification.
+    Could return: 'standing', 'sitting', 'lying', etc.
     """
+    return "standing"  # TODO: Replace with actual analysis
 
-    # TODO: Integrate with Mediapipe or OpenPose
-    return "standing"  # Stub value
+def contains_human_pose(image_path):
+    """
+    Stub to check if a valid human pose is detected.
+    """
+    return True  # TODO: Replace with actual detection
