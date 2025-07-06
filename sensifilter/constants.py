@@ -1,17 +1,17 @@
 # constants.py
 
-# Klassificeringsetiketter
+# === Klassificeringsetiketter ===
 LABEL_SAFE = "safe"
 LABEL_REVIEW = "review"
 LABEL_NUDITY = "nudity"
 LABEL_VIOLENCE = "violence"
 LABEL_OTHER_SENSITIVE = "other_sensitive"
 
-# Tröskelvärden
+# === Tröskelvärden ===
 DEFAULT_CONFIDENCE_THRESHOLD = 0.85
 DEFAULT_SKIN_PERCENT_THRESHOLD = 5.0
 
-# Nyckelord (kan laddas från config senare)
+# === Känsliga nyckelord per kategori ===
 KEYWORDS_NUDITY = [
     "nude", "naked", "bare", "topless", "genitals", "breasts",
     "sex", "erotic", "lingerie", "underwear", "intimate"
@@ -27,12 +27,12 @@ KEYWORDS_OTHER = [
     "joint", "marijuana", "pill", "bong"
 ]
 
-# Trygga ord (för att undvika falska positiva)
+# === Trygga nyckelord (för att undvika falska positiva) ===
 KEYWORDS_WHITELIST = [
     "bikini", "swimsuit", "beach", "swimming pool"
 ]
 
-# Etikettbas per kategori
+# === Etiketter kopplade till nyckelord ===
 CATEGORY_KEYWORDS = {
     LABEL_NUDITY: KEYWORDS_NUDITY,
     LABEL_VIOLENCE: KEYWORDS_VIOLENCE,
