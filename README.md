@@ -26,6 +26,7 @@ result = analyze_image("photo.jpg")
 
 print(result["label"])  # "safe", "nudity", "violence", "review"
 print(result["caption"])  # e.g. "a nude woman sitting on a bed"
+```
 
 🔧 Roadmap
 Modular structure
