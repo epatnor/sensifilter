@@ -24,7 +24,7 @@ def estimate_skin_percent(image_path):
     Returnerar % av bilden som tros vara hud.
     """
     image = load_image(image_path)
-    pixels = image.getdata()
+    pixels = list(image.getdata())
     skin_pixels = 0
 
     for pixel in pixels:
