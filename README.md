@@ -13,7 +13,7 @@ It is designed to be fast, configurable, and easy to integrate into photo manage
 - BLIP-based captioning and semantic filtering
 - Customizable confidence thresholds and keyword lists
 - Optional CLI for batch analysis
-- Plug-and-play friendly: can be used as a standalone module or integrated into larger projects like Phunnel
+- Plug-and-play friendly: can be used as a standalone module or integrated into larger projects
 
 ---
 
