@@ -1,7 +1,7 @@
 # test_ui.py
 
 import streamlit as st
-from sensifilter.analyze import analyze_image
+from sensifilter import analyze_image
 import os
 
 st.set_page_config(page_title="Sensifilter Test UI", layout="centered")
