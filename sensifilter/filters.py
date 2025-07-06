@@ -1,17 +1,21 @@
 # filters.py
 
-import cv2
-import numpy as np
-from PIL import Image
 from sensifilter.constants import DEFAULT_SKIN_PERCENT_THRESHOLD
+from sensifilter.utils import estimate_skin_percent
+from PIL import Image
 
-# === Kör snabba filter (upplösning, människa, hudprocent) ===
+
 def quick_filter(image_path):
+    """
+    Kör snabba, tidiga filter för att direkt slänga ointressanta bilder.
+    Returnerar (True, meta) om bilden passerar.
+    """
+
     meta = {
         "width": None,
         "height": None,
         "skin_percent": None,
-        "contains_human": None
+        "contains_human": None,
     }
 
     try:
@@ -19,40 +23,58 @@ def quick_filter(image_path):
             width, height = img.size
             meta["width"] = width
             meta["height"] = height
+
             if width < 100 or height < 100:
                 return False, meta
     except Exception:
         return False, meta
 
-    meta["contains_human"] = detect_humans(image_path)
-    if not meta["contains_human"]:
-        return False, meta
-
+    meta["contains_human"] = True  # placeholder
     meta["skin_percent"] = estimate_skin_percent(image_path)
+
     if meta["skin_percent"] < DEFAULT_SKIN_PERCENT_THRESHOLD:
         return False, meta
 
     return True, meta
 
-# === Riktigt HSV-baserad hudanalys ===
-def estimate_skin_percent(image_path):
-    img = cv2.imread(image_path)
-    if img is None:
-        return 0.0
 
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    lower = np.array([0, 40, 60], dtype=np.uint8)
-    upper = np.array([25, 255, 255], dtype=np.uint8)
-    mask = cv2.inRange(img, lower, upper)
+def apply_filters(result: dict, settings: dict = None):
+    """
+    Kör hela filtersystemet på ett analysresultat.
+    Returnerar etiketten (safe/sensitive) eller 'review'.
+    """
+    if settings is None:
+        settings = {}
 
-    skin_pixels = cv2.countNonZero(mask)
-    total_pixels = img.shape[0] * img.shape[1]
+    min_skin = settings.get("min_skin_percent", 15)
+    enable_scene = settings.get("enable_scene_filter", True)
+    enable_keywords = settings.get("enable_keyword_filter", True)
+    enable_caption = settings.get("enable_caption_filter", True)
 
-    if total_pixels == 0:
-        return 0.0
+    # För många kläder? = safe
+    if result.get("skin_percent", 0) < min_skin:
+        return "safe"
 
-    return (skin_pixels / total_pixels) * 100
+    # Inget mänskligt? = safe
+    if not result.get("contains_human", False):
+        return "safe"
 
-# === Placeholder för framtida persondetektion (t.ex. YOLOv8) ===
-def detect_humans(image_path):
-    return True
+    # Sensitiv scen?
+    if enable_scene and isinstance(result.get("scene"), str):
+        scene = result["scene"].lower()
+        if "bathroom" in scene or "bedroom" in scene or "beach" in scene:
+            return "sensitive"
+
+    # Nyckelord?
+    if enable_keywords:
+        keywords = result.get("keywords", [])
+        if any(k in ["nude", "genitals", "topless"] for k in keywords):
+            return "sensitive"
+
+    # Bildtext
+    if enable_caption and isinstance(result.get("caption"), tuple):
+        caption_text, conf = result["caption"]
+        if "naked" in caption_text.lower() or "lingerie" in caption_text.lower():
+            return "sensitive"
+
+    return "safe"
