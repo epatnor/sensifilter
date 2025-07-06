@@ -23,18 +23,13 @@ echo.
 echo ✅ Setup complete!
 echo.
 
-REM === Prompt for UI launch ===
-echo Launch test UI?
-choice /M "Start test_ui.py now"
-IF ERRORLEVEL 2 GOTO end
-
+REM === Launch test UI directly ===
 echo Starting Streamlit UI...
 start "" http://localhost:8501
 python -m streamlit run test_ui.py
 
-:end
+REM === Deactivate venv after Streamlit ends ===
 echo.
-REM === Deactivate venv ===
 call deactivate
 
 pause
