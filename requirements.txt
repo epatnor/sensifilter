@@ -1,19 +1,18 @@
-# Core ML libraries
+# === Core ML libraries ===
 torch
 torchvision
 transformers
 accelerate
 
-# Image handling
+# === Image processing ===
 pillow
 opencv-python
 
-# YOLOv8 for human detection
-ultralytics
+# === Detection models ===
+ultralytics  # YOLOv8 (optional for human detection)
 
-# CLI tools
+# === Progress bar and CLI ===
 tqdm
-argparse
 
-# GUI testing
+# === UI ===
 streamlit
