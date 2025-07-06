@@ -1,35 +1,40 @@
 @echo off
 SETLOCAL
 
-REM === Pull latest changes from GitHub ===
-echo Pulling latest changes...
-git pull origin main
+REM === Gå till skriptets katalog ===
+cd /d %~dp0
 
-REM === Check if venv exists, else create it ===
+REM === Kontrollera om .venv finns, annars skapa ===
 IF NOT EXIST .venv (
     echo Creating virtual environment...
     python -m venv .venv
 )
 
-REM === Activate venv ===
-call .venv\Scripts\activate
+REM === Aktivera venv ===
+call .venv\Scripts\activate.bat
 
-REM === Always install requirements ===
-echo Installing/updating Python packages...
-pip install --upgrade pip >nul
-pip install -r requirements.txt
+REM === Kontrollera om streamlit är installerat ===
+where streamlit >nul 2>&1
+IF %ERRORLEVEL% NEQ 0 (
+    echo Installing requirements...
+    python -m pip install --upgrade pip
+    pip install -r requirements.txt
+)
 
+REM === Kör test_ui.py ===
 echo.
-echo ✅ Setup complete!
+echo ✅ Environment ready. Starting Sensifilter UI...
 echo.
 
-REM === Launch Streamlit UI in background ===
-start "" cmd /c "python -m streamlit run test_ui.py --server.headless=true --browser.serverAddress=localhost"
+REM === Döda ev. hängande streamlit-processer ===
+for /f "tokens=2 delims=," %%a in ('tasklist /FI "IMAGENAME eq python.exe" /FI "WINDOWTITLE eq streamlit*" /FO CSV ^| find /I "python.exe"') do (
+    taskkill /PID %%a /F >nul 2>&1
+)
 
-REM === Wait a moment before opening browser ===
-timeout /t 3 >nul
-start "" http://localhost:8501
+python -m streamlit run test_ui.py
 
-REM === Done ===
+REM === Återställ prompt ===
+echo.
+echo Streamlit UI closed. Press any key to exit.
 pause
 ENDLOCAL
