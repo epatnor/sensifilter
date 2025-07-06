@@ -16,6 +16,10 @@ def classify_caption(caption, threshold=0.85, allowlist=None, blocklist=None):
     if not caption:
         return LABEL_REVIEW
 
+    # Om det är en tuple (text, confidence), extrahera bara text
+    if isinstance(caption, tuple):
+        caption = caption[0]
+
     text = caption.lower()
     allowlist = set(KEYWORDS_WHITELIST + (allowlist or []))
     custom_blocklist = set(blocklist or [])
@@ -43,5 +47,9 @@ def match_keywords(caption, keywords):
     """
     if not caption:
         return []
+
+    if isinstance(caption, tuple):
+        caption = caption[0]
+
     text = caption.lower()
     return [kw for kw in keywords if kw in text]
