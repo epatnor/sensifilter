@@ -26,7 +26,8 @@ echo.
 REM === Launch test UI directly ===
 echo Starting Streamlit UI...
 start "" http://localhost:8501
-python -m streamlit run test_ui.py
+python -m streamlit run test_ui.py --server.headless=true --browser.serverAddress=localhost
+
 
 REM === Deactivate venv after Streamlit ends ===
 echo.
