@@ -1,0 +1,15 @@
+# Core ML libraries
+torch
+transformers
+accelerate
+
+# Image handling
+pillow
+opencv-python
+
+# YOLOv8 for human detection
+ultralytics
+
+# CLI tools
+tqdm
+argparse
