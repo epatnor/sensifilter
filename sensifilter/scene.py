@@ -2,35 +2,44 @@
 
 import torch
 import torchvision.transforms as transforms
+from torchvision import models
 from PIL import Image
 import os
+import urllib.request
 
-# === Ladda Places365-klasser och etiketter vid första körning ===
+# === Paths ===
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "resnet18_places365.pth.tar")
+LABELS_PATH = os.path.join(os.path.dirname(__file__), "categories_places365.txt")
+
+
+# === Ladda etiketter från Places365 ===
 def load_labels():
-    file_path = os.path.join(os.path.dirname(__file__), "categories_places365.txt")
-    if not os.path.exists(file_path):
-        import urllib.request
+    if not os.path.exists(LABELS_PATH):
         url = "https://raw.githubusercontent.com/csailvision/places365/master/categories_places365.txt"
-        urllib.request.urlretrieve(url, file_path)
-    with open(file_path) as f:
+        urllib.request.urlretrieve(url, LABELS_PATH)
+
+    with open(LABELS_PATH) as f:
         return [line.strip().split(" ")[0][3:] for line in f]
 
-# === Ladda Places365-modellen (ResNet18) ===
-def load_model():
-    model_file = os.path.join(os.path.dirname(__file__), "resnet18_places365.pth.tar")
-    if not os.path.exists(model_file):
-        import urllib.request
-        url = "http://places2.csail.mit.edu/models_places365/resnet18_places365.pth.tar"
-        urllib.request.urlretrieve(url, model_file)
 
-    model = torch.hub.load('pytorch/vision:v0.10.0', 'resnet18', pretrained=False)
-    checkpoint = torch.load(model_file, map_location=torch.device('cpu'))
-    state_dict = {str(k.replace("module.", "")): v for k, v in checkpoint["state_dict"].items()}
+# === Ladda Places365-modellen ===
+def load_model():
+    if not os.path.exists(MODEL_PATH):
+        url = "http://places2.csail.mit.edu/models_places365/resnet18_places365.pth.tar"
+        urllib.request.urlretrieve(url, MODEL_PATH)
+
+    # 👇 Viktigt! Rätt antal klasser
+    model = models.resnet18(num_classes=365)
+
+    # Ta bort "module." från keys om modellen är tränad med DataParallel
+    checkpoint = torch.load(MODEL_PATH, map_location=torch.device('cpu'))
+    state_dict = {k.replace("module.", ""): v for k, v in checkpoint['state_dict'].items()}
     model.load_state_dict(state_dict)
     model.eval()
     return model
 
-# === Standardtransform för Places365-bilder ===
+
+# === Förbehandling av bild ===
 def transform_image(image_path):
     transform = transforms.Compose([
         transforms.Resize((256, 256)),
@@ -44,14 +53,18 @@ def transform_image(image_path):
     img = Image.open(image_path).convert('RGB')
     return transform(img).unsqueeze(0)
 
-# === Klassificera scenen i bilden och returnera toppetikett ===
+
+# === Klassificera scen i bild ===
 def classify_scene(image_path):
     model = load_model()
     labels = load_labels()
     input_tensor = transform_image(image_path)
+
     with torch.no_grad():
-        logits = model(input_tensor)
-        probs = torch.nn.functional.softmax(logits, dim=1)
-        top_idx = torch.argmax(probs).item()
+        output = model(input_tensor)
+        probs = torch.nn.functional.softmax(output[0], dim=0)
+        top_idx = probs.argmax().item()
         top_label = labels[top_idx]
-        return top_label
+        confidence = probs[top_idx].item()
+
+    return f"{top_label} ({confidence:.2f})"
