@@ -29,7 +29,8 @@ def quick_filter(image_path):
     except Exception:
         return False, meta
 
-    meta["contains_human"] = True  # placeholder
+    # Placeholder-värden
+    meta["contains_human"] = True
     meta["skin_percent"] = estimate_skin_percent(image_path)
 
     if meta["skin_percent"] < DEFAULT_SKIN_PERCENT_THRESHOLD:
@@ -51,30 +52,35 @@ def apply_filters(result: dict, settings: dict = None):
     enable_keywords = settings.get("enable_keyword_filter", True)
     enable_caption = settings.get("enable_caption_filter", True)
 
-    # För många kläder? = safe
-    if result.get("skin_percent", 0) < min_skin:
+    skin_percent = result.get("skin_percent", 0)
+    contains_human = result.get("contains_human", False)
+
+    if skin_percent < min_skin:
         return "safe"
 
-    # Inget mänskligt? = safe
-    if not result.get("contains_human", False):
+    if not contains_human:
         return "safe"
 
-    # Sensitiv scen?
-    if enable_scene and isinstance(result.get("scene"), str):
-        scene = result["scene"].lower()
-        if "bathroom" in scene or "bedroom" in scene or "beach" in scene:
-            return "sensitive"
+    # Kontrollera scenklassificering
+    if enable_scene:
+        scene = result.get("scene", "")
+        if isinstance(scene, str):
+            scene = scene.lower()
+            if any(s in scene for s in ["bathroom", "bedroom", "beach"]):
+                return "sensitive"
 
-    # Nyckelord?
+    # Kontrollera nyckelord
     if enable_keywords:
         keywords = result.get("keywords", [])
         if any(k in ["nude", "genitals", "topless"] for k in keywords):
             return "sensitive"
 
-    # Bildtext
-    if enable_caption and isinstance(result.get("caption"), tuple):
-        caption_text, conf = result["caption"]
-        if "naked" in caption_text.lower() or "lingerie" in caption_text.lower():
-            return "sensitive"
+    # Kontrollera bildtext
+    if enable_caption:
+        caption = result.get("caption", ("", 0.0))
+        if isinstance(caption, tuple):
+            caption_text = caption[0].lower()
+            if any(word in caption_text for word in ["naked", "lingerie"]):
+                return "sensitive"
 
     return "safe"
