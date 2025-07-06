@@ -13,3 +13,6 @@ ultralytics
 # CLI tools
 tqdm
 argparse
+
+# GUI testing
+streamlit
