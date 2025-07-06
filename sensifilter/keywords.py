@@ -9,11 +9,14 @@ from sensifilter.constants import (
 
 # === Klassificera bildtext utifrån nyckelord ===
 def classify_caption(caption, threshold=0.85, allowlist=None, blocklist=None):
+    """
+    Returnerar en etikett baserat på matchade nyckelord.
+    Prioritet: allowlist → blocklist → kategorinyckelord → safe
+    """
     if not caption:
         return LABEL_REVIEW
 
     text = caption.lower()
-
     allowlist = set(KEYWORDS_WHITELIST + (allowlist or []))
     custom_blocklist = set(blocklist or [])
 
@@ -32,8 +35,12 @@ def classify_caption(caption, threshold=0.85, allowlist=None, blocklist=None):
 
     return LABEL_SAFE
 
+
 # === Enklare variant: returnerar lista av matchade nyckelord ===
 def match_keywords(caption, keywords):
+    """
+    Returnerar alla nyckelord som förekommer i bildtexten.
+    """
     if not caption:
         return []
     text = caption.lower()
