@@ -2,6 +2,7 @@
 
 import os
 from . import scene, utils, keywords, filters, caption, pose
+from sensifilter.constants import KEYWORDS_NUDITY + KEYWORDS_VIOLENCE + KEYWORDS_OTHER
 
 # === Main analysis function ===
 def analyze_image(image_path, settings):
@@ -23,14 +24,16 @@ def analyze_image(image_path, settings):
     # === Caption generation ===
     if settings.get("enable_caption_filter", True):
         try:
-            result["caption"] = caption.generate_caption(image_path)
+            caption_text, confidence = caption.generate_caption(image_path)
+            result["caption"] = (caption_text, confidence)
         except Exception as e:
-            result["caption"] = f"Error: {e}"
+            result["caption"] = (f"Error: {e}", 0.0)
 
-    # === Keyword detection ===
+    # === Keyword matching from caption ===
     if settings.get("enable_keyword_filter", True):
         try:
-            result["keywords"] = keywords.extract_keywords(image_path)
+            caption_text = result["caption"][0] if isinstance(result["caption"], tuple) else ""
+            result["keywords"] = keywords.match_keywords(caption_text, KEYWORDS_NUDITY + KEYWORDS_VIOLENCE + KEYWORDS_OTHER)
         except Exception as e:
             result["keywords"] = [f"Error: {e}"]
 
