@@ -1,5 +1,6 @@
 # Core ML libraries
 torch
+torchvision
 transformers
 accelerate
 
