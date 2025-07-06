@@ -28,12 +28,13 @@ print(result["label"])  # "safe", "nudity", "violence", "review"
 print(result["caption"])  # e.g. "a nude woman sitting on a bed"
 ```
 
-🔧 Roadmap
-Modular structure
-BLIP/YOLO integration
-Scene & pose detection
-GUI-friendly progress callbacks
-JSON-configurable settings
+## 🔧 Roadmap
 
-📄 License
+* Modular structure
+* BLIP/YOLO integration
+* Scene & pose detection
+* GUI-friendly progress callbacks
+* JSON-configurable settings
+
+## 📄 License
 MIT – do what you want, but be respectful.
