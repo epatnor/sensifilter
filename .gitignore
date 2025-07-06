@@ -1,0 +1,32 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Environment
+.env
+.venv/
+env/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS-filer
+.DS_Store
+Thumbs.db
+
+# Model weights and large files
+*.pth
+*.pt
+*.onnx
+*.ckpt
+*.safetensors
+
+# Logs and temp
+*.log
+*.tmp
+
+# VSCode / IDE
+.vscode/
+.idea/
