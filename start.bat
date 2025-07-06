@@ -12,26 +12,24 @@ IF NOT EXIST .venv (
 )
 
 REM === Activate venv ===
-call .venv\Scripts\activate
+call .venv\Scripts\activate.bat
 
 REM === Always install requirements ===
 echo Installing/updating Python packages...
-pip install --upgrade pip >nul
+pip install --upgrade pip
 pip install -r requirements.txt
 
 echo.
 echo ✅ Setup complete!
 echo.
 
-REM === Launch test UI directly ===
-echo Starting Streamlit UI...
+REM === Open browser tab (optional) ===
 start "" http://localhost:8501
+
+REM === Launch Streamlit ===
 python -m streamlit run test_ui.py --server.headless=true --browser.serverAddress=localhost
 
-
-REM === Deactivate venv after Streamlit ends ===
+REM === Optional: just pause before closing ===
 echo.
-call deactivate
-
 pause
 ENDLOCAL
