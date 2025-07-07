@@ -5,6 +5,7 @@ import cv2
 print("📦 boundingbox.py loaded from:", __file__)
 import numpy as np
 from ultralytics import YOLO
+from .utils import detect_skin
 
 # === Välj device automatiskt (GPU om möjligt) ===
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
