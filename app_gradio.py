@@ -2,78 +2,86 @@
 
 import gradio as gr
 import tempfile
-import numpy as np
-from sensifilter.analyze import analyze_image
+import os
+from sensifilter import analyze
 
-# === App-inställningar ===
-settings = {
+# === Globala inställningar ===
+DEFAULT_SETTINGS = {
     "enable_scene_filter": True,
     "enable_caption_filter": True,
     "enable_keyword_filter": True,
 }
 
-# === Gradio-funktion som anropar analyskedjan ===
-def process_image(upload):
-    if upload is None:
-        return None, None, "", "", 0.0, "", False, {}, "No file uploaded"
+def run_analysis(image_path):
+    print(f"📷 Received image: {image_path}")
+    result = analyze.analyze_image(image_path, DEFAULT_SETTINGS)
 
-    # Spara temporärt
-    with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
-        tmp.write(upload.read())
-        temp_path = tmp.name
+    original = image_path
+    annotated = None
+    if "annotated_image" in result:
+        # Spara annoterad bild temporärt
+        annotated_path = os.path.join(tempfile.gettempdir(), "annotated.jpg")
+        result["annotated_image"].save(annotated_path)
+        annotated = annotated_path
 
-    # Kör analys
-    result = analyze_image(temp_path, settings)
+    caption_text = result.get("caption", ["", 0])[0]
+    scene = result.get("scene", "")
+    skin_percent = round(result.get("skin_percent", 0), 2)
+    pose = result.get("pose", "")
+    contains_human = result.get("contains_human", False)
+    label = result.get("label", "")
 
-    # Extrahera bilder (RGB → numpy → visningsbar)
-    orig = result.get("original_image_rgb")
-    annot = result.get("annotated_image")
-    if orig is not None:
-        orig = np.array(orig)
-    if annot is not None:
-        annot = np.array(annot)
-
-    # Returnera till UI
     return (
-        orig,
-        annot,
-        result.get("caption", [""])[0],
-        result.get("scene", ""),
-        round(result.get("skin_percent", 0.0), 2),
-        result.get("pose", ""),
-        result.get("contains_human", False),
-        result.get("keywords", []),
-        result,
+        original,
+        annotated,
+        label,
+        caption_text,
+        scene,
+        skin_percent,
+        pose,
+        contains_human,
+        result
     )
 
-# === UI layout ===
-with gr.Blocks(title="Sensifilter Analyzer (Gradio Edition)") as demo:
+
+with gr.Blocks(title="Sensifilter Analyzer") as demo:
     gr.Markdown("🧪 **Sensifilter Analyzer (Gradio Edition)**")
 
     with gr.Row():
         with gr.Column():
-            image_input = gr.Image(label="📤 Upload image", type="file")
-            run_btn = gr.Button("Run Analysis", elem_id="analyze_btn")
+            image_input = gr.Image(label="📤 Upload image", type="filepath")
+            run_button = gr.Button("Run Analysis", variant="primary")
+
         with gr.Column():
-            image_orig = gr.Image(label="🖼 Original", interactive=False)
-            image_annot = gr.Image(label="📦 Annotated", interactive=False)
+            image_original = gr.Image(label="🖼 Original")
+            image_annotated = gr.Image(label="🎯 Annotated")
 
     with gr.Row():
-        label_out = gr.Label(label="Label")
-        caption_out = gr.Textbox(label="Caption")
-        scene_out = gr.Textbox(label="Scene")
-        skin_out = gr.Number(label="Skin %")
-        pose_out = gr.Textbox(label="Pose")
-        human_out = gr.Checkbox(label="Contains Human")
+        label_output = gr.Label(label="Label")
+        caption_output = gr.Textbox(label="Caption")
+        scene_output = gr.Textbox(label="Scene")
+        skin_output = gr.Number(label="Skin %")
+        pose_output = gr.Textbox(label="Pose")
+        human_output = gr.Checkbox(label="Contains Human")
 
-    keywords_out = gr.HighlightedText(label="🔑 Keywords")
-    json_out = gr.Json(label="🪵 Full Raw Result", visible=True)
+    full_output = gr.JSON(label="📋 Full Raw Result", visible=True)
 
-    run_btn.click(fn=process_image, inputs=[image_input], outputs=[
-        image_orig, image_annot, caption_out, scene_out,
-        skin_out, pose_out, human_out, keywords_out, json_out
-    ])
+    run_button.click(
+        fn=run_analysis,
+        inputs=[image_input],
+        outputs=[
+            image_original,
+            image_annotated,
+            label_output,
+            caption_output,
+            scene_output,
+            skin_output,
+            pose_output,
+            human_output,
+            full_output
+        ]
+    )
 
-# === Starta servern ===
 if __name__ == "__main__":
+    print("✅ Environment ready. Launching UI...")
     demo.launch()
