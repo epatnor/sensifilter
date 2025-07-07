@@ -3,12 +3,17 @@
 from PIL import Image
 
 
+# PIL-RGB (för basic analys)
 def load_image(image_path):
-    """
-    Loads an image using PIL and converts to RGB.
-    """
     with Image.open(image_path) as img:
         return img.convert("RGB")
+
+# OpenCV-BGR (för YOLO/boxes)
+def load_image_bgr(image_path):
+    image = cv2.imread(image_path)
+    if image is None:
+        raise ValueError(f"Failed to load image: {image_path}")
+    return image
 
 
 def resize_image(image, size=(224, 224)):
