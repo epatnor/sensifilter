@@ -1,5 +1,6 @@
 # app_gradio.py
 
+import cv2
 import gradio as gr
 import tempfile
 import os
