@@ -2,13 +2,12 @@
 
 from nicegui import ui
 import os
-import json
 from sensifilter import analyze_image
 
-# Skapa temporär mapp om den inte finns
+# Skapa temporär mapp för uppladdade filer
 os.makedirs("temp", exist_ok=True)
 
-# Spara analysinställningar
+# Standardinställningar för analysen
 default_settings = {
     "confidence_threshold": 0.5,
     "min_skin_percent": 15,
@@ -18,14 +17,13 @@ default_settings = {
     "enable_caption_filter": True,
 }
 
-# Element som vi ska uppdatera
+# UI-komponenter vi refererar senare
 preview_image = ui.image().style("max-width: 100%")
 annotated_image = ui.image().style("max-width: 100%")
 info_box = ui.column()
-result_json = ui.label("").style("white-space: pre-wrap; font-family: monospace")
+raw_result_box = ui.textarea(label="Raw Result", readonly=True).style("width: 100%; height: 200px; font-family: monospace")
 
-
-# Funktion som kör analysen
+# === Funktion som kör analysen ===
 def handle_upload(e):
     uploaded = e.content.read()
     temp_path = "temp/uploaded.jpg"
@@ -33,8 +31,8 @@ def handle_upload(e):
         f.write(uploaded)
 
     preview_image.set_source(temp_path)
-
     ui.notify("Analyzing...", type="info")
+
     try:
         result = analyze_image(temp_path, settings=default_settings)
 
@@ -54,7 +52,7 @@ def handle_upload(e):
             ui.label(f"🟤 Skin %: {skin}%")
             ui.label(f"✅ Human detected: {human}")
 
-        # Visa annoterad bild om den finns
+        # Annoterad bild om den finns
         annotated = result.get("annotated_image")
         if annotated is not None:
             from PIL import Image
@@ -64,14 +62,14 @@ def handle_upload(e):
         else:
             annotated_image.set_source("")
 
-        result_json.set_text(json.dumps(result, indent=2))
+        import json
+        raw_result_box.value = json.dumps(result, indent=2, ensure_ascii=False)
 
     except Exception as err:
         ui.notify(f"Error: {err}", type="negative")
 
-
 # === UI Layout ===
-ui.markdown("## 🧪 Sensifilter Test UI (NiceGUI)")
+ui.markdown("## 🧪 Sensifilter Test UI (NiceGUI)").classes("text-2xl")
 
 with ui.row().classes("gap-6"):
     with ui.column():
@@ -81,11 +79,12 @@ with ui.row().classes("gap-6"):
 
     with ui.column():
         annotated_image
-        ui.label("Annotated Image (with bounding boxes)")
+        ui.label("Annotated Image")
 
 ui.separator()
 info_box
-ui.markdown("### 🧾 Raw Result")
-result_json
+ui.separator()
+ui.markdown("### 🧾 Raw JSON Result")
+raw_result_box
 
-ui.run(title="Sensifilter UI", reload=False, port=8080)
+ui.run(title="Sensifilter UI", port=8080, reload=False)
