@@ -1,6 +1,6 @@
 # filters.py
 
-from sensifilter.constants import DEFAULT_SKIN_PERCENT_THRESHOLD
+from sensifilter.constants import DEFAULT_SKIN_PERCENT_THRESHOLD, DEFAULT_SKIN_HUMAN_RATIO
 from sensifilter.utils import estimate_skin_percent
 from PIL import Image
 
@@ -47,7 +47,7 @@ def apply_filters(result: dict, settings: dict = None):
         settings = {}
 
     min_skin = settings.get("min_skin_percent", 15)
-    min_skin_human_ratio = settings.get("min_skin_human_ratio", 0.4)
+    min_skin_human_ratio = settings.get("min_skin_human_ratio", DEFAULT_SKIN_HUMAN_RATIO)
     enable_scene = settings.get("enable_scene_filter", True)
     enable_keywords = settings.get("enable_keyword_filter", True)
     enable_caption = settings.get("enable_caption_filter", True)
@@ -56,10 +56,12 @@ def apply_filters(result: dict, settings: dict = None):
     skin_human_ratio = result.get("max_skin_ratio", 0)
     contains_human = result.get("contains_human", False)
 
-    if skin_percent < min_skin and skin_human_ratio < min_skin_human_ratio:
+    # Om ingen människa finns, ignorera all hudanalys
+    if not contains_human:
         return "safe"
 
-    if not contains_human:
+    # Tröskelvärden för hud (total eller inom mänsklig box)
+    if skin_percent < min_skin and skin_human_ratio < min_skin_human_ratio:
         return "safe"
 
     # Kontrollera scenklassificering
