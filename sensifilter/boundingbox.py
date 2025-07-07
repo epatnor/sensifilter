@@ -14,11 +14,9 @@ MODEL = YOLO("yolov8s.pt").to(DEVICE)
 
 print("✅ YOLOv8 model loaded on device:", DEVICE)
 
-
 def detect_skin_ratio(image_bgr):
     """
     Analyserar bilden och returnerar skin/human-ratio för varje person som hittas.
-
     Returnerar en lista med:
     [
         {"box": (x1, y1, x2, y2), "skin_ratio": float},
@@ -26,9 +24,28 @@ def detect_skin_ratio(image_bgr):
     ]
     """
     print("🔍 Running YOLOv8 on input image...")
-    results = MODEL(image_bgr)[0]
-    boxes = results.boxes.xyxy.cpu().numpy()
-    classes = results.boxes.cls.cpu().numpy()
+    try:
+        results = MODEL(image_bgr)
+    except Exception as e:
+        print(f"❌ Error running YOLO model: {e}")
+        return []
+
+    if not results or not hasattr(results[0], "boxes"):
+        print("⚠️ YOLO did not return any valid boxes.")
+        return []
+
+    results = results[0]
+    boxes_raw = results.boxes
+    if boxes_raw is None:
+        print("⚠️ YOLO result.boxes is None.")
+        return []
+
+    try:
+        xyxy = boxes_raw.xyxy.cpu().numpy()
+        classes = boxes_raw.cls.cpu().numpy()
+    except Exception as e:
+        print(f"❌ Failed to parse YOLO output: {e}")
+        return []
 
     print("== YOLO raw output ==")
     print(f"Total detections: {len(classes)}")
@@ -36,7 +53,7 @@ def detect_skin_ratio(image_bgr):
 
     output = []
 
-    for i, (box, cls_id) in enumerate(zip(boxes, classes)):
+    for i, (box, cls_id) in enumerate(zip(xyxy, classes)):
         print(f"→ Detection {i}: class_id={cls_id}, box={box}")
         if int(cls_id) != 0:
             print("   Skipped (not a person)")
@@ -62,6 +79,7 @@ def detect_skin_ratio(image_bgr):
 
     print(f"==> Final person boxes: {len(output)}")
     return output
+
 
 
 def detect_skin(image_bgr):
