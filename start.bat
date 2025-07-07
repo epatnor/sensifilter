@@ -16,11 +16,13 @@ IF %ERRORLEVEL% NEQ 0 (
     .\.venv\Scripts\pip.exe install -r requirements.txt
 )
 
-REM === Starta Streamlit-UI ===
+REM === Starta Streamlit-UI (i detta terminalfönster) ===
 echo.
-echo ✅ Environment ready. Starting Sensifilter UI...
+echo ✅ Environment ready. Opening UI in browser...
 start "" http://localhost:8501
-.\.venv\Scripts\python.exe -m streamlit run test_ui.py --server.headless true --browser.serverAddress localhost
+
+REM === Viktigt: runOnSave ger bättre Ctrl+C-respons ===
+.\.venv\Scripts\python.exe -m streamlit run test_ui.py --server.headless true --browser.serverAddress localhost --server.runOnSave true
 
 echo.
 echo Streamlit UI closed. Press any key to exit.
