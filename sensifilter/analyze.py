@@ -52,6 +52,8 @@ def analyze_image(image_path, settings):
     try:
         image_bgr = utils.load_image_bgr(image_path)
         boxes = boundingbox.detect_skin_ratio(image_bgr)
+        print("DEBUG: Skin ratio result:", result["skin_human_boxes"])
+
         result["skin_human_boxes"] = boxes
         result["max_skin_ratio"] = max((b["skin_ratio"] for b in boxes), default=0)
         if boxes:
