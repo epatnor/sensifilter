@@ -2,6 +2,7 @@
 
 import torch
 import cv2
+print("📦 boundingbox.py loaded from:", __file__)
 import numpy as np
 from ultralytics import YOLO
 
