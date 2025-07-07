@@ -15,23 +15,22 @@ IF NOT EXIST .venv (
     python -m venv .venv
 )
 
-REM === Installera beroenden om streamlit saknas ===
-.\.venv\Scripts\python.exe -m pip show streamlit >nul 2>&1
+REM === Installera beroenden om NiceGUI saknas ===
+.\.venv\Scripts\python.exe -m pip show nicegui >nul 2>&1
 IF %ERRORLEVEL% NEQ 0 (
     echo 📦 Installing requirements...
     .\.venv\Scripts\python.exe -m pip install --upgrade pip
     .\.venv\Scripts\pip.exe install -r requirements.txt
 )
 
-REM === Starta Streamlit-UI (i detta terminalfönster) ===
+REM === Starta NiceGUI-UI ===
 echo.
 echo ✅ Environment ready. Opening UI in browser...
-start "" http://localhost:8501
+start "" http://localhost:8080
 
-REM === Viktigt: runOnSave ger bättre Ctrl+C-respons ===
-.\.venv\Scripts\python.exe -m streamlit run test_ui.py --server.headless true --browser.serverAddress localhost --server.runOnSave true
+.\.venv\Scripts\python.exe testnice.py
 
 echo.
-echo Streamlit UI closed. Press any key to exit.
+echo NiceGUI UI closed. Press any key to exit.
 pause
 ENDLOCAL
