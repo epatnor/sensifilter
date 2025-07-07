@@ -8,8 +8,9 @@ from ultralytics import YOLO
 # === Välj device automatiskt (GPU om möjligt) ===
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-# === Ladda YOLOv8n-modell för persondetektion ===
-MODEL = YOLO("yolov8n.pt").to(DEVICE)
+# === Byt till större YOLOv8-modell för bättre persondetektering ===
+MODEL = YOLO("yolov8s.pt").to(DEVICE)
+
 
 
 def detect_skin_ratio(image_bgr):
