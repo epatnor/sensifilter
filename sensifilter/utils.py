@@ -1,5 +1,7 @@
 # utils.py
 
+import cv2
+import numpy as np
 from PIL import Image
 
 
@@ -7,6 +9,7 @@ from PIL import Image
 def load_image(image_path):
     with Image.open(image_path) as img:
         return img.convert("RGB")
+
 
 # OpenCV-BGR (för YOLO/boxes)
 def load_image_bgr(image_path):
@@ -44,3 +47,15 @@ def estimate_skin_percent(image_path):
         return 0.0
 
     return (skin_pixels / total_pixels) * 100
+
+
+# === YCrCb skin detection for boundingbox crops ===
+def detect_skin(image_bgr):
+    """
+    Returnerar en binär mask av hudregioner i en BGR-bild med YCrCb-färgmodell.
+    """
+    img_ycrcb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2YCrCb)
+    lower = np.array([0, 133, 77], dtype=np.uint8)
+    upper = np.array([255, 173, 127], dtype=np.uint8)
+    mask = cv2.inRange(img_ycrcb, lower, upper)
+    return mask
