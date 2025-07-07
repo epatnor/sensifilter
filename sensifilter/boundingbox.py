@@ -48,3 +48,25 @@ def detect_skin_ratio(image_bgr):
 
     print(f"==> Final person boxes: {len(output)}")
     return output
+
+def draw_bounding_boxes(image_bgr, boxes):
+    """
+    Tar in en BGR-bild och en lista av boxar som [{box: (x1, y1, x2, y2), skin_ratio: float}]
+    och returnerar en annoterad bild med rektanglar och procenttext.
+    """
+    annotated = image_bgr.copy()
+    for b in boxes:
+        x1, y1, x2, y2 = b["box"]
+        ratio = b["skin_ratio"]
+        cv2.rectangle(annotated, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv2.putText(
+            annotated,
+            f"{ratio:.1%}",
+            (x1, y1 - 10),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 255, 0),
+            1,
+            cv2.LINE_AA
+        )
+    return annotated
