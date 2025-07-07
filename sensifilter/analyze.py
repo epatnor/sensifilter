@@ -82,7 +82,7 @@ def analyze_image(image_path, settings):
             with io.BytesIO() as buffer:
                 pil_image.save(buffer, format="JPEG", quality=85)
                 compressed = buffer.getvalue()
-                result["annotated_image"] = Image.open(io.BytesIO(compressed)).convert("RGB")
+                result["annotated_image"] = np.array(Image.open(io.BytesIO(compressed)).convert("RGB"))
 
         else:
             print("⚠️ No boxes found, skipping annotation.")
