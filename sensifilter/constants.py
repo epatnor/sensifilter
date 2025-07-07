@@ -41,3 +41,7 @@ CATEGORY_KEYWORDS = {
 
 # === Samlingslista för alla nyckelord (till matchning etc) ===
 ALL_SENSITIVE_KEYWORDS = KEYWORDS_NUDITY + KEYWORDS_VIOLENCE + KEYWORDS_OTHER
+
+# === Bounding box-baserad hudtröskel ===
+DEFAULT_SKIN_HUMAN_RATIO = 0.4
+
