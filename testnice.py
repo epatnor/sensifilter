@@ -86,5 +86,5 @@ info_box
 ui.markdown("### 🧾 Raw Result")
 result_json
 
-ui.run(title="Sensifilter UI", reload=False, port=8501)
+ui.run(title="Sensifilter UI", reload=False, port=8080)
 
