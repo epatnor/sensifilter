@@ -15,5 +15,6 @@ ultralytics  # YOLOv8 (optional for human detection)
 tqdm
 
 # === UI ===
+gradio
 streamlit
 nicegui
