@@ -21,7 +21,7 @@ default_settings = {
 preview_image = ui.image().style("max-width: 100%")
 annotated_image = ui.image().style("max-width: 100%")
 info_box = ui.column()
-result_json = ui.json_view({})
+result_json = ui.json({})  # <-- fix här
 
 # Funktion som kör analysen
 def handle_upload(e):
