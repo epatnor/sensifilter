@@ -67,7 +67,8 @@ def analyze_image(image_path, settings):
         if boxes:
             annotated_bgr = boundingbox.draw_bounding_boxes(image_bgr, boxes)
             annotated_rgb = cv2.cvtColor(annotated_bgr, cv2.COLOR_BGR2RGB)
-
+        
+            # Förhindra att vi skickar jättelika bilder till gränssnittet
             h, w, _ = annotated_rgb.shape
             print(f"🖼 Annotated image size: {w}x{h}")
             max_size = 1600
@@ -75,15 +76,18 @@ def analyze_image(image_path, settings):
                 scale = max_size / max(h, w)
                 annotated_rgb = cv2.resize(annotated_rgb, (int(w * scale), int(h * scale)))
                 print(f"🔧 Resized annotated image to: {annotated_rgb.shape[1]}x{annotated_rgb.shape[0]}")
-
-            # Komprimera till JPEG och returnera som bytes (kan hanteras i gradio)
+        
+            # Komprimera till JPEG och läs tillbaka som NumPy-array
             pil_image = Image.fromarray(annotated_rgb)
+            import io
             with io.BytesIO() as buffer:
                 pil_image.save(buffer, format="JPEG", quality=85)
-                result["annotated_image"] = buffer.getvalue()
+                compressed = buffer.getvalue()
+                result["annotated_image"] = cv2.imdecode(np.frombuffer(compressed, np.uint8), cv2.IMREAD_COLOR)
         else:
             print("⚠️ No boxes found, skipping annotation.")
             result["annotated_image"] = None
+
 
         result["original_image_rgb"] = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
 
