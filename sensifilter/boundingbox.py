@@ -12,7 +12,6 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 MODEL = YOLO("yolov8s.pt").to(DEVICE)
 
 
-
 def detect_skin_ratio(image_bgr):
     """
     Analyserar bilden och returnerar skin/human-ratio för varje person som hittas.
@@ -27,15 +26,22 @@ def detect_skin_ratio(image_bgr):
     boxes = results.boxes.xyxy.cpu().numpy()
     classes = results.boxes.cls.cpu().numpy()
 
+    print("== YOLO raw output ==")
+    print(f"Total detections: {len(classes)}")
+    print("Classes:", classes)
+
     output = []
 
-    for box, cls_id in zip(boxes, classes):
+    for i, (box, cls_id) in enumerate(zip(boxes, classes)):
+        print(f"→ Detection {i}: class_id={cls_id}, box={box}")
         if int(cls_id) != 0:
-            continue  # Vi är bara intresserade av personer
+            print("   Skipped (not a person)")
+            continue
 
         x1, y1, x2, y2 = map(int, box)
         crop = image_bgr[y1:y2, x1:x2]
         if crop.size == 0:
+            print("   Skipped (empty crop)")
             continue
 
         skin_mask = detect_skin(crop)
@@ -43,11 +49,14 @@ def detect_skin_ratio(image_bgr):
         total_area = crop.shape[0] * crop.shape[1]
         ratio = skin_area / total_area if total_area > 0 else 0
 
+        print(f"   → skin_ratio = {round(ratio, 3)}")
+
         output.append({
             "box": (x1, y1, x2, y2),
             "skin_ratio": round(ratio, 3)
         })
 
+    print(f"==> Final person boxes: {len(output)}")
     return output
 
 
