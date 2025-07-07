@@ -1,6 +1,28 @@
+# boundingbox.py
+
+import torch
+import cv2
+import numpy as np
+from ultralytics import YOLO
+
+# === Välj device automatiskt (GPU om möjligt) ===
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+# === Byt till större YOLOv8-modell för bättre persondetektering ===
+MODEL = YOLO("yolov8s.pt").to(DEVICE)
+
+print("✅ YOLOv8 model loaded on device:", DEVICE)
+
+
 def detect_skin_ratio(image_bgr):
     """
     Analyserar bilden och returnerar skin/human-ratio för varje person som hittas.
+
+    Returnerar en lista med:
+    [
+        {"box": (x1, y1, x2, y2), "skin_ratio": float},
+        ...
+    ]
     """
     print("🔍 Running YOLOv8 on input image...")
     results = MODEL(image_bgr)[0]
@@ -12,7 +34,6 @@ def detect_skin_ratio(image_bgr):
     print("Classes:", classes)
 
     output = []
-    h, w = image_bgr.shape[:2]
 
     for i, (box, cls_id) in enumerate(zip(boxes, classes)):
         print(f"→ Detection {i}: class_id={cls_id}, box={box}")
@@ -20,15 +41,7 @@ def detect_skin_ratio(image_bgr):
             print("   Skipped (not a person)")
             continue
 
-        # Begränsa till bildens storlek
         x1, y1, x2, y2 = map(int, box)
-        x1, y1 = max(0, x1), max(0, y1)
-        x2, y2 = min(w, x2), min(h, y2)
-
-        if x2 <= x1 or y2 <= y1:
-            print("   Skipped (invalid box after clipping)")
-            continue
-
         crop = image_bgr[y1:y2, x1:x2]
         if crop.size == 0:
             print("   Skipped (empty crop)")
@@ -49,24 +62,31 @@ def detect_skin_ratio(image_bgr):
     print(f"==> Final person boxes: {len(output)}")
     return output
 
+
+def detect_skin(image_bgr):
+    """
+    Enkel YCrCb-baserad huddetektion. Returnerar binär mask.
+    """
+    img_ycrcb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2YCrCb)
+    lower = np.array([0, 133, 77], dtype=np.uint8)
+    upper = np.array([255, 173, 127], dtype=np.uint8)
+    mask = cv2.inRange(img_ycrcb, lower, upper)
+    return mask
+
+
 def draw_bounding_boxes(image_bgr, boxes):
     """
-    Tar in en BGR-bild och en lista av boxar som [{box: (x1, y1, x2, y2), skin_ratio: float}]
-    och returnerar en annoterad bild med rektanglar och procenttext.
+    Returnerar en kopia av bilden med ritade bounding boxes.
     """
-    annotated = image_bgr.copy()
-    for b in boxes:
-        x1, y1, x2, y2 = b["box"]
-        ratio = b["skin_ratio"]
-        cv2.rectangle(annotated, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        cv2.putText(
-            annotated,
-            f"{ratio:.1%}",
-            (x1, y1 - 10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (0, 255, 0),
-            1,
-            cv2.LINE_AA
-        )
-    return annotated
+    output_img = image_bgr.copy()
+
+    for box in boxes:
+        x1, y1, x2, y2 = box["box"]
+        ratio = box["skin_ratio"]
+        label = f"Skin {round(ratio * 100)}%"
+        color = (0, 255, 0) if ratio > 0.15 else (0, 0, 255)
+        cv2.rectangle(output_img, (x1, y1), (x2, y2), color, 2)
+        cv2.putText(output_img, label, (x1, y1 - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
+
+    return output_img
