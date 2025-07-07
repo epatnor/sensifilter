@@ -2,6 +2,7 @@
 
 from nicegui import ui
 import os
+import json
 from sensifilter import analyze_image
 
 # Skapa temporär mapp om den inte finns
@@ -21,7 +22,8 @@ default_settings = {
 preview_image = ui.image().style("max-width: 100%")
 annotated_image = ui.image().style("max-width: 100%")
 info_box = ui.column()
-result_json = ui.json({})  # <-- fix här
+result_json = ui.label("").style("white-space: pre-wrap; font-family: monospace")
+
 
 # Funktion som kör analysen
 def handle_upload(e):
@@ -62,7 +64,7 @@ def handle_upload(e):
         else:
             annotated_image.set_source("")
 
-        result_json.set_content(result)
+        result_json.set_text(json.dumps(result, indent=2))
 
     except Exception as err:
         ui.notify(f"Error: {err}", type="negative")
@@ -87,4 +89,3 @@ ui.markdown("### 🧾 Raw Result")
 result_json
 
 ui.run(title="Sensifilter UI", reload=False, port=8080)
-
