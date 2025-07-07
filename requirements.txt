@@ -16,3 +16,4 @@ tqdm
 
 # === UI ===
 streamlit
+nicegui
