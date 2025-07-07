@@ -2,9 +2,6 @@
 
 import cv2
 import gradio as gr
-import tempfile
-import os
-import numpy as np
 from sensifilter import analyze
 
 # === Globala inställningar ===
@@ -18,32 +15,21 @@ def run_analysis(image_path):
     print(f"📷 Received image: {image_path}")
     result = analyze.analyze_image(image_path, DEFAULT_SETTINGS)
 
-    original = image_path
-    annotated = None
-
-    # === Försök spara annoterad bild om den finns ===
+    # === Läs in originalbild som NumPy-array (RGB) ===
     try:
-        annotated_image = result.get("annotated_image")
-        if annotated_image is not None:
-            if isinstance(annotated_image, np.ndarray):
-                from PIL import Image
-                from PIL.Image import fromarray
-                pil_image = fromarray(annotated_image)
-                annotated_path = os.path.join(tempfile.gettempdir(), "annotated.jpg")
-                pil_image.save(annotated_path)
-                annotated = annotated_path
-                print("✅ Annotated image saved:", annotated_path)
-            else:
-                print(f"⚠️ Unexpected type for annotated_image: {type(annotated_image)}")
-        else:
-            print("⚠️ No annotated image returned.")
-    except Exception as e:
-        print("❌ Failed to save annotated image:", e)
+        original = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2RGB)
+    except:
+        original = None
+
+    annotated = result.get("annotated_image")
 
     # === Extrahera övriga resultat ===
     caption_text = result.get("caption", [""])[0]
     scene = result.get("scene", "")
-    skin_percent = round(result.get("skin_percent", 0), 2)
+    try:
+        skin_percent = round(result.get("skin_percent", 0), 2)
+    except:
+        skin_percent = 0.0
     pose = result.get("pose", "")
     contains_human = result.get("contains_human", False)
     label = result.get("label", "")
@@ -69,8 +55,8 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             run_button = gr.Button("Run Analysis", variant="primary")
 
         with gr.Column():
-            image_original = gr.Image(label="🖼 Original")
-            image_annotated = gr.Image(label="🎯 Annotated")
+            image_original = gr.Image(label="🖼 Original", type="numpy")
+            image_annotated = gr.Image(label="🎯 Annotated", type="numpy")
 
     with gr.Row():
         label_output = gr.Label(label="Label")
