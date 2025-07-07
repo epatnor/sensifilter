@@ -29,7 +29,6 @@ def quick_filter(image_path):
     except Exception:
         return False, meta
 
-    # Placeholder-värden
     meta["contains_human"] = True
     meta["skin_percent"] = estimate_skin_percent(image_path)
 
@@ -48,14 +47,16 @@ def apply_filters(result: dict, settings: dict = None):
         settings = {}
 
     min_skin = settings.get("min_skin_percent", 15)
+    min_skin_human_ratio = settings.get("min_skin_human_ratio", 0.4)
     enable_scene = settings.get("enable_scene_filter", True)
     enable_keywords = settings.get("enable_keyword_filter", True)
     enable_caption = settings.get("enable_caption_filter", True)
 
     skin_percent = result.get("skin_percent", 0)
+    skin_human_ratio = result.get("max_skin_ratio", 0)
     contains_human = result.get("contains_human", False)
 
-    if skin_percent < min_skin:
+    if skin_percent < min_skin and skin_human_ratio < min_skin_human_ratio:
         return "safe"
 
     if not contains_human:
