@@ -4,11 +4,10 @@ from nicegui import ui
 import os
 from sensifilter import analyze_image
 from PIL import Image
+import json
 
-# Skapa temporär mapp om den inte finns
 os.makedirs("temp", exist_ok=True)
 
-# Spara analysinställningar
 default_settings = {
     "confidence_threshold": 0.5,
     "min_skin_percent": 15,
@@ -18,14 +17,32 @@ default_settings = {
     "enable_caption_filter": True,
 }
 
-# Element som vi ska uppdatera
-preview_image = ui.image().style("max-width: 100%")
-annotated_image = ui.image().style("max-width: 100%")
-info_box = ui.column()
-raw_result_box = ui.textarea(label="Raw Result").props("readonly").style(
-    "width: 100%; height: 200px; font-family: monospace")
+# === GLOBAL UI ELEMENTS ===
+ui.dark_mode()
 
-# Funktion som kör analysen
+with ui.container().style("max-width: 1100px; margin: 0 auto; padding: 30px;"):
+
+    ui.markdown("## 🧪 Sensifilter Test UI (NiceGUI)")
+
+    with ui.row().classes("gap-8"):
+        with ui.column():
+            ui.upload(on_upload=lambda e: handle_upload(e), label="Upload Image", auto_upload=True)
+            preview_image = ui.image().style("max-width: 100%; margin-top: 8px")
+            ui.label("Original Image").style("margin-bottom: 20px;")
+
+        with ui.column():
+            annotated_image = ui.image().style("max-width: 100%; margin-top: 8px")
+            ui.label("Annotated Image (with bounding boxes)").style("margin-bottom: 20px;")
+
+    ui.separator().style("margin: 20px 0")
+
+    info_box = ui.column().style("gap: 4px;")
+
+    ui.markdown("### 🧾 Raw Result").style("margin-top: 30px")
+    raw_result_box = ui.textarea().props("readonly").style("width: 100%; height: 250px; font-family: monospace")
+
+
+# === ANALYSIS FUNCTION ===
 def handle_upload(e):
     uploaded = e.content.read()
     temp_path = "temp/uploaded.jpg"
@@ -54,7 +71,6 @@ def handle_upload(e):
             ui.label(f"🟤 Skin %: {skin}%")
             ui.label(f"✅ Human detected: {human}")
 
-        # Visa annoterad bild om den finns
         annotated = result.get("annotated_image")
         if annotated is not None:
             annotated_path = "temp/annotated.jpg"
@@ -63,29 +79,10 @@ def handle_upload(e):
         else:
             annotated_image.set_source("")
 
-        import json
         raw_result_box.value = json.dumps(result, indent=2)
 
     except Exception as err:
         ui.notify(f"Error: {err}", type="negative")
 
 
-# === UI Layout ===
-ui.markdown("## 🧪 Sensifilter Test UI (NiceGUI)")
-
-with ui.row().classes("gap-6"):
-    with ui.column():
-        ui.upload(on_upload=handle_upload, label="Upload Image", auto_upload=True)
-        preview_image
-        ui.label("Original Image")
-
-    with ui.column():
-        annotated_image
-        ui.label("Annotated Image (with bounding boxes)")
-
-ui.separator()
-info_box
-ui.markdown("### 🧾 Raw Result")
-raw_result_box
-
-ui.run(title="Sensifilter UI", reload=False)
+ui.run(title="Sensifilter UI", reload=False, port=8080)
