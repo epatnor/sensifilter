@@ -49,10 +49,12 @@ def analyze_image(image_path, settings):
         result["pose"] = f"Error: {e}"
         result["contains_human"] = False
 
-    # Human boxes via YOLO + skin analysis
+    # === Human boxes via YOLO + skin analysis ===
     try:
         image_bgr = utils.load_image_bgr(image_path)
         boxes = boundingbox.detect_skin_ratio(image_bgr)
+        print("🔎 Detected boxes:", boxes)
+
         result["skin_human_boxes"] = boxes
         result["max_skin_ratio"] = max((b["skin_ratio"] for b in boxes), default=0)
 
@@ -60,12 +62,18 @@ def analyze_image(image_path, settings):
             annotated_bgr = boundingbox.draw_bounding_boxes(image_bgr, boxes)
             annotated_rgb = cv2.cvtColor(annotated_bgr, cv2.COLOR_BGR2RGB)
             result["annotated_image"] = annotated_rgb
+        else:
+            print("⚠️ No boxes found, skipping annotation.")
+            result["annotated_image"] = None
 
         result["original_image_rgb"] = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
     except Exception as e:
+        print(f"❌ Error in YOLO/skin analysis: {e}")
         result["skin_human_boxes"] = []
         result["max_skin_ratio"] = 0.0
+        result["annotated_image"] = None
         result["original_image_rgb"] = None
+
 
     # Final decision label
     try:
