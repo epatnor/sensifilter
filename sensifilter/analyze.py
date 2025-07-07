@@ -2,8 +2,12 @@
 
 import os
 import cv2
+import numpy as np
+from PIL import Image
+
 print("📦 analyze.py loaded from:", __file__)
 print("🔧 cv2 available:", cv2.__version__)
+
 from . import scene, utils, keywords, filters, caption, pose, boundingbox
 from sensifilter.constants import KEYWORDS_NUDITY, KEYWORDS_VIOLENCE, KEYWORDS_OTHER
 
@@ -63,6 +67,16 @@ def analyze_image(image_path, settings):
         if boxes:
             annotated_bgr = boundingbox.draw_bounding_boxes(image_bgr, boxes)
             annotated_rgb = cv2.cvtColor(annotated_bgr, cv2.COLOR_BGR2RGB)
+
+            # Förhindra att vi skickar jättelika bilder till gränssnittet
+            h, w, _ = annotated_rgb.shape
+            print(f"🖼 Annotated image size: {w}x{h}")
+            max_size = 1600
+            if max(h, w) > max_size:
+                scale = max_size / max(h, w)
+                annotated_rgb = cv2.resize(annotated_rgb, (int(w * scale), int(h * scale)))
+                print(f"🔧 Resized annotated image to: {annotated_rgb.shape[1]}x{annotated_rgb.shape[0]}")
+
             result["annotated_image"] = annotated_rgb
         else:
             print("⚠️ No boxes found, skipping annotation.")
@@ -75,7 +89,6 @@ def analyze_image(image_path, settings):
         result["max_skin_ratio"] = 0.0
         result["annotated_image"] = None
         result["original_image_rgb"] = None
-
 
     # Final decision label
     try:
