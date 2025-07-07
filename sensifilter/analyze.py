@@ -48,13 +48,14 @@ def analyze_image(image_path, settings):
         result["pose"] = f"Error: {e}"
         result["contains_human"] = False
 
-    # === Human detection (YOLO skin ratio) ===
+    # === Human detection (YOLO skin ratio + bounding boxes) ===
     try:
         image_bgr = utils.load_image_bgr(image_path)
-        result["skin_human_boxes"] = boundingbox.detect_skin_ratio(image_bgr)
-        result["max_skin_ratio"] = max(
-            (b["skin_ratio"] for b in result["skin_human_boxes"]), default=0
-        )
+        boxes = boundingbox.detect_skin_ratio(image_bgr)
+        result["skin_human_boxes"] = boxes
+        result["max_skin_ratio"] = max((b["skin_ratio"] for b in boxes), default=0)
+        if boxes:
+            result["annotated_image"] = boundingbox.draw_bounding_boxes(image_bgr, boxes)
     except Exception as e:
         result["skin_human_boxes"] = []
         result["max_skin_ratio"] = 0.0
