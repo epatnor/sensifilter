@@ -1,7 +1,7 @@
 # analyze.py
 
 import os
-from . import scene, utils, keywords, filters, caption, pose
+from . import scene, utils, keywords, filters, caption, pose, boundingbox
 from sensifilter.constants import KEYWORDS_NUDITY, KEYWORDS_VIOLENCE, KEYWORDS_OTHER
 
 # Kombinera alla känsliga nyckelord till en lista
@@ -18,7 +18,7 @@ def analyze_image(image_path, settings):
         except Exception as e:
             result["scene"] = f"Error: {e}"
 
-    # === Skin percentage estimation ===
+    # === Skin percentage (total image) ===
     try:
         result["skin_percent"] = utils.estimate_skin_percent(image_path)
     except Exception as e:
@@ -32,7 +32,7 @@ def analyze_image(image_path, settings):
         except Exception as e:
             result["caption"] = (f"Error: {e}", 0.0)
 
-    # === Keyword matching from caption ===
+    # === Keyword matching ===
     if settings.get("enable_keyword_filter", True):
         try:
             caption_text = result["caption"][0] if isinstance(result["caption"], tuple) else ""
@@ -40,7 +40,7 @@ def analyze_image(image_path, settings):
         except Exception as e:
             result["keywords"] = [f"Error: {e}"]
 
-    # === Human detection (pose) ===
+    # === Human detection (pose-based) ===
     try:
         result["contains_human"] = pose.contains_human_pose(image_path)
         result["pose"] = "Yes" if result["contains_human"] else "No"
@@ -48,7 +48,18 @@ def analyze_image(image_path, settings):
         result["pose"] = f"Error: {e}"
         result["contains_human"] = False
 
-    # === Filtering ===
+    # === Human detection (YOLO skin ratio) ===
+    try:
+        image_bgr = utils.load_image_bgr(image_path)
+        result["skin_human_boxes"] = boundingbox.detect_skin_ratio(image_bgr)
+        result["max_skin_ratio"] = max(
+            (b["skin_ratio"] for b in result["skin_human_boxes"]), default=0
+        )
+    except Exception as e:
+        result["skin_human_boxes"] = []
+        result["max_skin_ratio"] = 0.0
+
+    # === Final filter decision ===
     try:
         result["label"] = filters.apply_filters(result, settings)
     except Exception as e:
