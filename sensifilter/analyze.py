@@ -2,6 +2,8 @@
 
 import os
 import cv2
+print("📦 analyze.py loaded from:", __file__)
+print("🔧 cv2 available:", cv2.__version__)
 from . import scene, utils, keywords, filters, caption, pose, boundingbox
 from sensifilter.constants import KEYWORDS_NUDITY, KEYWORDS_VIOLENCE, KEYWORDS_OTHER
 
