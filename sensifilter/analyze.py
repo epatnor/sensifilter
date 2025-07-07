@@ -4,6 +4,8 @@ import os
 import cv2
 import numpy as np
 from PIL import Image
+import io
+import base64
 
 print("📦 analyze.py loaded from:", __file__)
 print("🔧 cv2 available:", cv2.__version__)
@@ -11,10 +13,8 @@ print("🔧 cv2 available:", cv2.__version__)
 from . import scene, utils, keywords, filters, caption, pose, boundingbox
 from sensifilter.constants import KEYWORDS_NUDITY, KEYWORDS_VIOLENCE, KEYWORDS_OTHER
 
-# Kombinera alla känsliga nyckelord
 ALL_SENSITIVE_KEYWORDS = KEYWORDS_NUDITY + KEYWORDS_VIOLENCE + KEYWORDS_OTHER
 
-# === Main analysis function ===
 def analyze_image(image_path, settings):
     result = {}
 
@@ -31,7 +31,7 @@ def analyze_image(image_path, settings):
     except Exception as e:
         result["skin_percent"] = f"Error: {e}"
 
-    # Caption + confidence
+    # Caption
     if settings.get("enable_caption_filter", True):
         try:
             caption_text, confidence = caption.generate_caption(image_path)
@@ -55,7 +55,7 @@ def analyze_image(image_path, settings):
         result["pose"] = f"Error: {e}"
         result["contains_human"] = False
 
-    # === Human boxes via YOLO + skin analysis ===
+    # YOLO + skin analysis
     try:
         image_bgr = utils.load_image_bgr(image_path)
         boxes = boundingbox.detect_skin_ratio(image_bgr)
@@ -68,7 +68,6 @@ def analyze_image(image_path, settings):
             annotated_bgr = boundingbox.draw_bounding_boxes(image_bgr, boxes)
             annotated_rgb = cv2.cvtColor(annotated_bgr, cv2.COLOR_BGR2RGB)
 
-            # Förhindra att vi skickar jättelika bilder till gränssnittet
             h, w, _ = annotated_rgb.shape
             print(f"🖼 Annotated image size: {w}x{h}")
             max_size = 1600
@@ -77,12 +76,17 @@ def analyze_image(image_path, settings):
                 annotated_rgb = cv2.resize(annotated_rgb, (int(w * scale), int(h * scale)))
                 print(f"🔧 Resized annotated image to: {annotated_rgb.shape[1]}x{annotated_rgb.shape[0]}")
 
-            result["annotated_image"] = annotated_rgb
+            # Komprimera till JPEG och returnera som bytes (kan hanteras i gradio)
+            pil_image = Image.fromarray(annotated_rgb)
+            with io.BytesIO() as buffer:
+                pil_image.save(buffer, format="JPEG", quality=85)
+                result["annotated_image"] = buffer.getvalue()
         else:
             print("⚠️ No boxes found, skipping annotation.")
             result["annotated_image"] = None
 
         result["original_image_rgb"] = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
+
     except Exception as e:
         print(f"❌ Error in YOLO/skin analysis: {e}")
         result["skin_human_boxes"] = []
@@ -90,7 +94,6 @@ def analyze_image(image_path, settings):
         result["annotated_image"] = None
         result["original_image_rgb"] = None
 
-    # Final decision label
     try:
         result["label"] = filters.apply_filters(result, settings)
     except Exception as e:
