@@ -63,7 +63,8 @@ def handle_upload(e):
             annotated_image.set_source("")
 
         import json
-        raw_result_box.value = json.dumps(result, indent=2, ensure_ascii=False)
+        raw_result_box = ui.textarea(label="Raw Result").props("readonly").style("width: 100%; height: 200px; font-family: monospace")
+
 
     except Exception as err:
         ui.notify(f"Error: {err}", type="negative")
