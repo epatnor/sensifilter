@@ -4,6 +4,7 @@ import cv2
 import gradio as gr
 import tempfile
 import os
+import numpy as np
 from sensifilter import analyze
 
 # === Globala inställningar ===
@@ -22,13 +23,18 @@ def run_analysis(image_path):
 
     # === Försök spara annoterad bild om den finns ===
     try:
-        if result.get("annotated_image") is not None:
-            from PIL import Image
-            annotated_pil = Image.fromarray(result["annotated_image"])
-            annotated_path = os.path.join(tempfile.gettempdir(), "annotated.jpg")
-            annotated_pil.save(annotated_path)
-            annotated = annotated_path
-            print("✅ Annotated image saved:", annotated_path)
+        annotated_image = result.get("annotated_image")
+        if annotated_image is not None:
+            if isinstance(annotated_image, np.ndarray):
+                from PIL import Image
+                from PIL.Image import fromarray
+                pil_image = fromarray(annotated_image)
+                annotated_path = os.path.join(tempfile.gettempdir(), "annotated.jpg")
+                pil_image.save(annotated_path)
+                annotated = annotated_path
+                print("✅ Annotated image saved:", annotated_path)
+            else:
+                print(f"⚠️ Unexpected type for annotated_image: {type(annotated_image)}")
         else:
             print("⚠️ No annotated image returned.")
     except Exception as e:
