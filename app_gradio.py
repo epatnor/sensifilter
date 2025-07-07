@@ -19,25 +19,22 @@ def run_analysis(image_path):
     original = image_path
     annotated = None
 
-    if "annotated_image" in result and result["annotated_image"] is not None:
-        try:
+    # === Försök spara annoterad bild om den finns ===
+    try:
+        if result.get("annotated_image") is not None:
             from PIL import Image
             annotated_pil = Image.fromarray(result["annotated_image"])
             annotated_path = os.path.join(tempfile.gettempdir(), "annotated.jpg")
             annotated_pil.save(annotated_path)
             annotated = annotated_path
             print("✅ Annotated image saved:", annotated_path)
-        except Exception as e:
-            print("❌ Failed to save annotated image:", e)
-            annotated = None
-    else:
-        print("⚠️ No annotated image returned.")
-        annotated = None
+        else:
+            print("⚠️ No annotated image returned.")
+    except Exception as e:
+        print("❌ Failed to save annotated image:", e)
 
-    caption_text = ""
-    if isinstance(result.get("caption"), (list, tuple)):
-        caption_text = result["caption"][0]
-
+    # === Extrahera övriga resultat ===
+    caption_text = result.get("caption", [""])[0]
     scene = result.get("scene", "")
     skin_percent = round(result.get("skin_percent", 0), 2)
     pose = result.get("pose", "")
@@ -55,7 +52,6 @@ def run_analysis(image_path):
         contains_human,
         result
     )
-
 
 with gr.Blocks(title="Sensifilter Analyzer") as demo:
     gr.Markdown("🧪 **Sensifilter Analyzer (Gradio Edition)**")
