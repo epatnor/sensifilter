@@ -1,30 +1,31 @@
 # analyze.py
 
 import os
+import cv2
 from . import scene, utils, keywords, filters, caption, pose, boundingbox
 from sensifilter.constants import KEYWORDS_NUDITY, KEYWORDS_VIOLENCE, KEYWORDS_OTHER
 
-# Kombinera alla känsliga nyckelord till en lista
+# Kombinera alla känsliga nyckelord
 ALL_SENSITIVE_KEYWORDS = KEYWORDS_NUDITY + KEYWORDS_VIOLENCE + KEYWORDS_OTHER
 
 # === Main analysis function ===
 def analyze_image(image_path, settings):
     result = {}
 
-    # === Scene classification ===
+    # Scene classification
     if settings.get("enable_scene_filter", True):
         try:
             result["scene"] = scene.classify_scene(image_path)
         except Exception as e:
             result["scene"] = f"Error: {e}"
 
-    # === Skin percentage (total image) ===
+    # Skin % for entire image
     try:
         result["skin_percent"] = utils.estimate_skin_percent(image_path)
     except Exception as e:
         result["skin_percent"] = f"Error: {e}"
 
-    # === Caption generation ===
+    # Caption + confidence
     if settings.get("enable_caption_filter", True):
         try:
             caption_text, confidence = caption.generate_caption(image_path)
@@ -32,7 +33,7 @@ def analyze_image(image_path, settings):
         except Exception as e:
             result["caption"] = (f"Error: {e}", 0.0)
 
-    # === Keyword matching ===
+    # Keyword matching
     if settings.get("enable_keyword_filter", True):
         try:
             caption_text = result["caption"][0] if isinstance(result["caption"], tuple) else ""
@@ -40,7 +41,7 @@ def analyze_image(image_path, settings):
         except Exception as e:
             result["keywords"] = [f"Error: {e}"]
 
-    # === Human detection (pose-based) ===
+    # Human detection via pose
     try:
         result["contains_human"] = pose.contains_human_pose(image_path)
         result["pose"] = "Yes" if result["contains_human"] else "No"
@@ -48,22 +49,25 @@ def analyze_image(image_path, settings):
         result["pose"] = f"Error: {e}"
         result["contains_human"] = False
 
-    # === Human detection (YOLO skin ratio + bounding boxes) ===
+    # Human boxes via YOLO + skin analysis
     try:
         image_bgr = utils.load_image_bgr(image_path)
         boxes = boundingbox.detect_skin_ratio(image_bgr)
-
-        print("DEBUG: Skin ratio result:", boxes)  # <-- Rätt ställe
-
         result["skin_human_boxes"] = boxes
         result["max_skin_ratio"] = max((b["skin_ratio"] for b in boxes), default=0)
+
         if boxes:
-            result["annotated_image"] = boundingbox.draw_bounding_boxes(image_bgr, boxes)
+            annotated_bgr = boundingbox.draw_bounding_boxes(image_bgr, boxes)
+            annotated_rgb = cv2.cvtColor(annotated_bgr, cv2.COLOR_BGR2RGB)
+            result["annotated_image"] = annotated_rgb
+
+        result["original_image_rgb"] = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
     except Exception as e:
         result["skin_human_boxes"] = []
         result["max_skin_ratio"] = 0.0
+        result["original_image_rgb"] = None
 
-    # === Final filter decision ===
+    # Final decision label
     try:
         result["label"] = filters.apply_filters(result, settings)
     except Exception as e:
