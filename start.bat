@@ -23,10 +23,10 @@ IF %ERRORLEVEL% NEQ 0 (
     .\.venv\Scripts\pip.exe install -r requirements.txt
 )
 
-REM === Starta NiceGUI-UI ===
+REM === Starta NiceGUI UI (vänta lite innan vi öppnar webbläsaren) ===
 echo.
-echo ✅ Environment ready. Opening UI in browser...
-start "" http://localhost:8080
+echo ✅ Environment ready. Starting UI...
+start "" /MIN cmd /c "timeout /t 2 >nul & start http://localhost:8080"
 
 .\.venv\Scripts\python.exe testnice.py
 
