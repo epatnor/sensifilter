@@ -11,8 +11,8 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # === Byt till större YOLOv8-modell för bättre persondetektering ===
 MODEL = YOLO("yolov8s.pt").to(DEVICE)
 
-print("DEBUG: Starting bounding box loop")
-print(f"results.boxes.xyxy shape: {boxes.shape}")
+print("✅ YOLOv8 model loaded on device:", DEVICE)
+
 
 def detect_skin_ratio(image_bgr):
     """
@@ -24,6 +24,7 @@ def detect_skin_ratio(image_bgr):
         ...
     ]
     """
+    print("🔍 Running YOLOv8 on input image...")
     results = MODEL(image_bgr)[0]
     boxes = results.boxes.xyxy.cpu().numpy()
     classes = results.boxes.cls.cpu().numpy()
