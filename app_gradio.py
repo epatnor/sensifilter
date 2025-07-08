@@ -54,7 +54,7 @@ def run_analysis(image_path):
     except:
         skin_percent = 0.0
 
-    # Konvertera timings till vanliga python-typer för säker HTML-rendering i Gradio
+    # Clean timings dict for safe HTML rendering
     timings = result.get("timings", {})
     timings_clean = {str(k): float(v) if isinstance(v, (float, int)) else 0.0 for k, v in timings.items()}
 
