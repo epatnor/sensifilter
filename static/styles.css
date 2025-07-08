@@ -19,6 +19,7 @@ h1 {
   gap: 10px;
 }
 
+/* Dummy upload box */
 #uploadBox {
   display: flex;
   flex-direction: column;
@@ -58,14 +59,35 @@ h1 {
   text-align: center;
 }
 
+/* Section for preview and annotated images */
 .preview {
   max-width: 320px;
   max-height: 320px;
   border-radius: 8px;
   margin-bottom: 20px;
   box-shadow: 0 0 10px #00d18c66;
+  object-fit: contain;
 }
 
+/* Container for image + controls */
+.image-control-area {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 30px;
+  width: 640px; /* 320px image + 320px controls */
+  max-width: 100%;
+}
+
+/* Controls container to the right */
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 320px;
+}
+
+/* Button style */
 button#analyzeBtn {
   background-color: #00d18c;
   border: none;
@@ -75,8 +97,7 @@ button#analyzeBtn {
   cursor: pointer;
   border-radius: 6px;
   font-size: 1.1rem;
-  margin-bottom: 30px;
-  width: 320px;
+  width: 100%;
   transition: background-color 0.3s ease;
 }
 
@@ -90,14 +111,15 @@ button#analyzeBtn:not(:disabled):hover {
   background-color: #00c07a;
 }
 
+/* Summary label under the button */
 .summary {
   background-color: #2a2a2a;
   padding: 14px 18px;
   border-radius: 6px;
-  margin-bottom: 20px;
   font-size: 1rem;
   line-height: 1.6;
-  width: 320px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .summary.safe {
@@ -108,7 +130,8 @@ button#analyzeBtn:not(:disabled):hover {
   border-left: 5px solid #ff4444;
 }
 
-#error {
+/* Error messages */
+#error, #result {
   color: #ff6b6b;
   font-weight: bold;
   margin-top: 20px;
@@ -116,6 +139,7 @@ button#analyzeBtn:not(:disabled):hover {
   text-align: center;
 }
 
+/* Table styles */
 table {
   width: 100%;
   max-width: 720px;
