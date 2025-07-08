@@ -130,18 +130,22 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 annotated = np.zeros((100, 100, 3), dtype=np.uint8)
             elif hasattr(annotated, 'convert'):  # PIL Image -> numpy
                 annotated = np.array(annotated)
-
+    
             label = outputs[1] or "unknown"
             timings = outputs[-1] or {}
-
+    
             sanitized = []
             for o in outputs[2:-2]:
                 sanitized.append(o if o is not None else "")
-
+    
             pipeline_html = render_pipeline(timings, label)
+    
+            # Debug: kontrollera att vi har en sträng och att det ser ut som HTML
+            print(f"DEBUG: pipeline_html type before conversion: {type(pipeline_html)}")
             if not isinstance(pipeline_html, str):
                 pipeline_html = str(pipeline_html)
-
+            print(f"DEBUG: pipeline_html preview:\n{pipeline_html[:200]}")
+    
             return (
                 annotated,
                 label_to_badge(label),
@@ -158,6 +162,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 {},
                 "",
             )
+
 
     run_button.click(
         fn=run_analysis,
