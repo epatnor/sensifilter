@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   const imageInput = document.getElementById("imageInput");
-  const uploadBox = document.getElementById("uploadBox"); // Den klickbara dummy-rutan
+  const uploadBox = document.getElementById("uploadBox"); // Dummy-rutan
   const preview = document.getElementById("preview");
   const annotated = document.getElementById("annotated");
   const analyzeBtn = document.getElementById("analyzeBtn");
@@ -15,6 +15,8 @@ document.addEventListener("DOMContentLoaded", () => {
     ["yolo_skin_detection", "YOLOv8 + Skin Filter"],
     ["keyword_matching", "Keyword Filter"]
   ];
+
+  let clickLocked = false; // För att undvika dubbel-popup
 
   // Initiera pipeline-tabellen med grått "pending"-utseende
   function initPipelineTable() {
@@ -44,35 +46,38 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // När fil väljs, visa preview, göm annoterad bild och dölja fel/resultat
+  // Hantera filval
   imageInput.addEventListener("change", () => {
     const file = imageInput.files[0];
     if (file) {
       preview.src = URL.createObjectURL(file);
       preview.style.display = "block";
       annotated.style.display = "none";
-      uploadBox.style.display = "none";  // Dölj dummy-rutan när bild vald
+      uploadBox.style.display = "none";
       summary.textContent = "";
       resultBox.style.display = "none";
       initPipelineTable();
-      analyzeBtn.disabled = false; // Aktivera knappen nu när fil är vald
+      analyzeBtn.disabled = false; // Aktivera knappen
     } else {
       preview.style.display = "none";
       annotated.style.display = "none";
-      uploadBox.style.display = "flex";  // Visa dummy-rutan om ingen bild vald
+      uploadBox.style.display = "flex";
       summary.textContent = "";
       resultBox.style.display = "none";
       initPipelineTable();
-      analyzeBtn.disabled = true; // Inaktivera knappen när ingen fil
+      analyzeBtn.disabled = true; // Inaktivera knappen
     }
   });
 
-  // Klick på dummy-rutan öppnar filväljaren
+  // Klick på dummy-rutan öppnar filväljaren (med debounce)
   uploadBox.addEventListener("click", () => {
+    if (clickLocked) return;
+    clickLocked = true;
     imageInput.click();
+    setTimeout(() => { clickLocked = false; }, 500);
   });
 
-  // Kör analys, uppdatera tabell och UI med resultat
+  // Kör analys och uppdatera UI
   analyzeBtn.addEventListener("click", async () => {
     const file = imageInput.files[0];
     if (!file) {
@@ -131,10 +136,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   initPipelineTable();
 
-  // Start with dummy upload box visible, hide images and results
+  // Initial UI setup
   preview.style.display = "none";
   annotated.style.display = "none";
   uploadBox.style.display = "flex";
   resultBox.style.display = "none";
   summary.textContent = "";
+  analyzeBtn.disabled = true; // Starta med knappen inaktiverad
 });
