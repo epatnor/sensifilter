@@ -16,7 +16,6 @@ DEFAULT_SETTINGS = {
     "enable_keyword_filter": True,
 }
 
-
 # Serve static files (e.g. index.html)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -34,7 +33,8 @@ async def analyze_endpoint(file: UploadFile = File(...)):
             tmp.write(await file.read())
             tmp_path = tmp.name
 
-        result = analyze_image(tmp_path)
+        # ✅ Pass in settings!
+        result = analyze_image(tmp_path, DEFAULT_SETTINGS)
         os.remove(tmp_path)
 
         return JSONResponse(content=result)
