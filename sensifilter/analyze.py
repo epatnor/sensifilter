@@ -23,12 +23,6 @@ def analyze_image(image_path, settings):
         except Exception as e:
             result["scene"] = f"Error: {e}"
 
-    # Skin % for entire image
-    try:
-        result["skin_percent"] = utils.estimate_skin_percent(image_path)
-    except Exception as e:
-        result["skin_percent"] = f"Error: {e}"
-
     # Caption generation
     if settings.get("enable_caption_filter", True):
         try:
