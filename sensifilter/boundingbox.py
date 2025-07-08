@@ -11,7 +11,7 @@ print("📦 boundingbox.py loaded from:", __file__)
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Ladda YOLOv8-modell (small) för persondetektering
-MODEL = YOLO("yolov8s.pt").to(DEVICE)
+MODEL = YOLO("yolov8n.pt").to(DEVICE)
 print("✅ YOLOv8 model loaded on device:", DEVICE)
 
 
