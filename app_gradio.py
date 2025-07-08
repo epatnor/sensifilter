@@ -108,30 +108,43 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
     # Handle output processing and HTML rendering
     def postprocess(outputs):
         try:
+            # Sanity check
+            if not isinstance(outputs, (list, tuple)) or len(outputs) < 11:
+                raise ValueError("Invalid number of outputs returned")
+    
+            # Extract and validate key outputs
             annotated = outputs[0]
-            if annotated is None or not isinstance(annotated, np.ndarray):
+            if not isinstance(annotated, np.ndarray):
                 annotated = np.zeros((100, 100, 3), dtype=np.uint8)
-
+    
             label = outputs[1] or "unknown"
-            timings = outputs[-1] or {}
-
-            sanitized = []
-            for o in outputs[2:-2]:
-                if o is None:
-                    sanitized.append("")
-                elif isinstance(o, (str, bool, int, float)):
-                    sanitized.append(o)
-                else:
-                    sanitized.append(str(o))
-
+            caption = outputs[2]
+            scene = outputs[3]
+            skin = outputs[4]
+            pose = outputs[5]
+            contains_human = outputs[6]
+            blip_conf = outputs[7]
+            yolo_skipped = outputs[8]
+            full_result = outputs[9] if isinstance(outputs[9], dict) else {}
+            timings = outputs[10] if isinstance(outputs[10], dict) else {}
+    
+            # Render pipeline HTML safely
             pipeline_html = render_pipeline(timings, label)
+    
             return (
                 annotated,
                 label_to_badge(label),
-                *sanitized,
-                outputs[-2] if isinstance(outputs[-2], dict) else {},
+                caption,
+                scene,
+                skin,
+                pose,
+                contains_human,
+                blip_conf,
+                yolo_skipped,
+                full_result,
                 pipeline_html,
             )
+    
         except Exception as e:
             print(f"❌ Postprocess error: {e}")
             return (
@@ -141,6 +154,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 {},
                 render_pipeline_preview(),
             )
+
 
     # Bind button click
     run_button.click(
