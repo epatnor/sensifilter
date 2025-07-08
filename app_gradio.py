@@ -20,13 +20,28 @@ def run_analysis(image_path):
     # === Extrahera övriga resultat ===
     caption_text = result.get("caption", [""])[0]
     scene = result.get("scene", "")
-    try:
-        skin_percent = round(result.get("skin_percent", 0), 2)
-    except:
-        skin_percent = 0.0
     pose = result.get("pose", "")
     contains_human = result.get("contains_human", False)
     label = result.get("label", "")
+
+    # Beräkna total skin %
+    try:
+        boxes = result.get("skin_human_boxes", [])
+        total_pixels = 0
+        total_skin_pixels = 0
+        for b in boxes:
+            x1, y1, x2, y2 = b["box"]
+            area = max((x2 - x1), 1) * max((y2 - y1), 1)
+            skin_ratio = b.get("skin_ratio", 0)
+            skin_pixels = skin_ratio * area
+            total_pixels += area
+            total_skin_pixels += skin_pixels
+        if total_pixels > 0:
+            skin_percent = round((total_skin_pixels / total_pixels) * 100, 2)
+        else:
+            skin_percent = 0.0
+    except:
+        skin_percent = 0.0
 
     return (
         annotated,
