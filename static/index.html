@@ -10,6 +10,40 @@
     .preview { max-width: 400px; margin-bottom: 12px; }
     label, button { margin-top: 10px; display: block; }
     #result { margin-top: 20px; white-space: pre-wrap; font-family: monospace; }
+    .results {
+      background: #333;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 20px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    
+    .label.safe {
+      color: #00d18c;
+      font-weight: bold;
+    }
+    
+    .label.nsfw {
+      color: #ff4e4e;
+      font-weight: bold;
+    }
+    
+    .error {
+      color: #ff4e4e;
+      font-weight: bold;
+    }
+    
+    .timings {
+      margin-top: 8px;
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .timings td {
+      padding: 4px 8px;
+      border-bottom: 1px solid #555;
+    }
   </style>
 </head>
 <body>
