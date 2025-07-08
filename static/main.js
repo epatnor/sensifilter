@@ -51,15 +51,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const scene = data.scene?.split(" ")[0] || "";
     const confidence = data.blip_confidence || 0;
     const caption = data.caption?.[0] || "";
-    const containsHuman = !!data.contains_human;
+    const containsHuman = data.contains_human ? "Yes" : "No";
     const pose = data.pose || "Unknown";
     const maxSkin = data.max_skin_ratio || 0;
     const timings = data.timings || {};
-
+  
     const timingRows = Object.entries(timings)
       .map(([k, v]) => `<tr><td>${k}</td><td>${v.toFixed(2)}s</td></tr>`)
       .join("");
-
+  
     resultDiv.innerHTML = `
       <div class="results">
         <div class="label ${safe ? "safe" : "nsfw"}">
@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <p><strong>Caption:</strong> ${caption}</p>
         <p><strong>Scene:</strong> ${scene}</p>
         <p><strong>BLIP Confidence:</strong> ${(confidence * 100).toFixed(1)}%</p>
-        <p><strong>Contains Human:</strong> ${containsHuman ? "✅" : "❌"}</p>
+        <p><strong>Contains Human:</strong> ${containsHuman}</p>
         <p><strong>Pose Detected:</strong> ${pose}</p>
         <p><strong>Skin Exposure (max):</strong> ${(maxSkin * 100).toFixed(1)}%</p>
         <details>
@@ -80,4 +80,5 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `;
   }
+
 });
