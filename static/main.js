@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   const imageInput = document.getElementById("imageInput");
-  const uploadBox = document.getElementById("uploadBox"); // Dummy-rutan
+  const uploadBox = document.getElementById("uploadBox");
   const preview = document.getElementById("preview");
   const annotated = document.getElementById("annotated");
   const analyzeBtn = document.getElementById("analyzeBtn");
@@ -16,9 +16,6 @@ document.addEventListener("DOMContentLoaded", () => {
     ["keyword_matching", "Keyword Filter"]
   ];
 
-  let clickLocked = false; // För att undvika dubbel-popup
-
-  // Initiera pipeline-tabellen med grått "pending"-utseende
   function initPipelineTable() {
     pipelineBody.innerHTML = "";
     for (const [key, label] of steps) {
@@ -35,7 +32,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Uppdatera ett steg med resultat och tid, ta bort grå ton
   function updateStep(key, result, time) {
     const row = document.getElementById(`step-${key}`);
     if (row) {
@@ -46,7 +42,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Hantera filval
+  uploadBox.addEventListener("click", () => {
+    imageInput.click();
+  });
+
   imageInput.addEventListener("change", () => {
     const file = imageInput.files[0];
     if (file) {
@@ -57,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
       summary.textContent = "";
       resultBox.style.display = "none";
       initPipelineTable();
-      analyzeBtn.disabled = false; // Aktivera knappen
+      analyzeBtn.disabled = false; // Enable button when file chosen
     } else {
       preview.style.display = "none";
       annotated.style.display = "none";
@@ -65,11 +64,10 @@ document.addEventListener("DOMContentLoaded", () => {
       summary.textContent = "";
       resultBox.style.display = "none";
       initPipelineTable();
-      analyzeBtn.disabled = true; // Inaktivera knappen
+      analyzeBtn.disabled = true;
     }
   });
 
-  // Kör analys och uppdatera UI
   analyzeBtn.addEventListener("click", async () => {
     const file = imageInput.files[0];
     if (!file) {
@@ -111,7 +109,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         resultBox.style.display = "none";
-
       } else {
         resultBox.textContent = "❌ " + (data.error || "Unknown error");
         resultBox.style.display = "block";
@@ -126,13 +123,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  initPipelineTable();
-
-  // Initial UI setup
+  // Start state
   preview.style.display = "none";
   annotated.style.display = "none";
   uploadBox.style.display = "flex";
   resultBox.style.display = "none";
   summary.textContent = "";
-  analyzeBtn.disabled = true; // Starta med knappen inaktiverad
+  analyzeBtn.disabled = true;
+
+  initPipelineTable();
 });
