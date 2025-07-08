@@ -4,58 +4,18 @@
 <head>
   <meta charset="UTF-8">
   <title>Sensifilter</title>
-  <style>
-    body { font-family: sans-serif; background: #222; color: #eee; padding: 20px; }
-    h1 { color: #00d18c; }
-    .preview { max-width: 400px; margin-bottom: 12px; }
-    label, button { margin-top: 10px; display: block; }
-    #result { margin-top: 20px; white-space: pre-wrap; font-family: monospace; }
-    .results {
-      background: #333;
-      border-radius: 8px;
-      padding: 16px;
-      margin-top: 20px;
-      font-size: 0.95rem;
-      line-height: 1.5;
-    }
-    
-    .label.safe {
-      color: #00d18c;
-      font-weight: bold;
-    }
-    
-    .label.nsfw {
-      color: #ff4e4e;
-      font-weight: bold;
-    }
-    
-    .error {
-      color: #ff4e4e;
-      font-weight: bold;
-    }
-    
-    .timings {
-      margin-top: 8px;
-      width: 100%;
-      border-collapse: collapse;
-    }
-    
-    .timings td {
-      padding: 4px 8px;
-      border-bottom: 1px solid #555;
-    }
-  </style>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script defer src="/static/main.js"></script>
 </head>
 <body>
 
   <h1>🧪 Sensifilter</h1>
-  
+
   <input type="file" id="imageInput" accept="image/*">
   <img id="preview" class="preview" />
   <button id="analyzeBtn">Analyze Image</button>
 
   <div id="result">...</div>
 
-  <script src="/static/main.js"></script>
 </body>
 </html>
