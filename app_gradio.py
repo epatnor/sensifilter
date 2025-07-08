@@ -15,12 +15,6 @@ def run_analysis(image_path):
     print(f"📷 Received image: {image_path}")
     result = analyze.analyze_image(image_path, DEFAULT_SETTINGS)
 
-    # === Läs in originalbild som NumPy-array (RGB) ===
-    try:
-        original = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2RGB)
-    except:
-        original = None
-
     annotated = result.get("annotated_image")
 
     # === Extrahera övriga resultat ===
@@ -35,7 +29,6 @@ def run_analysis(image_path):
     label = result.get("label", "")
 
     return (
-        original,
         annotated,
         label,
         caption_text,
@@ -55,7 +48,6 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             run_button = gr.Button("Run Analysis", variant="primary")
 
         with gr.Column():
-            image_original = gr.Image(label="🖼 Original", type="numpy")
             image_annotated = gr.Image(label="🎯 Annotated", type="numpy")
 
     with gr.Row():
@@ -72,7 +64,6 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
         fn=run_analysis,
         inputs=[image_input],
         outputs=[
-            image_original,
             image_annotated,
             label_output,
             caption_output,
