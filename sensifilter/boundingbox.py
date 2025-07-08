@@ -71,7 +71,8 @@ def detect_skin_ratio(image_bgr):
         skin_area = np.count_nonzero(skin_mask)
         total_area = crop.shape[0] * crop.shape[1]
         ratio = skin_area / total_area if total_area > 0 else 0
-
+        
+        print(f"   → skin_pixels = {skin_area}, total_area = {total_area}, ratio = {round(ratio, 4)}")
         print(f"   → skin_ratio = {round(ratio, 3)}")
 
         output.append({
