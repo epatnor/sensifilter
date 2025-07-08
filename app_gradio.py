@@ -8,6 +8,14 @@ DEFAULT_SETTINGS = {
     "enable_keyword_filter": True,
 }
 
+STEP_NAMES = [
+    "Captioning",
+    "Keyword Matching",
+    "Scene Classification",
+    "Pose Detection",
+    "YOLO & Skin Detection",
+]
+
 def run_analysis(image_path):
     print(f"📷 Received image: {image_path}")
     result = analyze.analyze_image(image_path, DEFAULT_SETTINGS)
@@ -46,6 +54,7 @@ def run_analysis(image_path):
     except:
         skin_percent = 0.0
 
+    timings = result.get("timings", {})
     return (
         annotated,
         label,
@@ -56,8 +65,10 @@ def run_analysis(image_path):
         contains_human,
         blip_confidence,
         yolo_skipped,
-        result
+        result,
+        timings,
     )
+
 
 def label_to_badge(label):
     colors = {
@@ -78,6 +89,32 @@ def label_to_badge(label):
         text-align: center;
     ">{label.upper()}</span>"""
 
+
+def render_pipeline(timings, label):
+    # Determine index where the image is judged safe (or label fallback)
+    label_lc = label.lower()
+    if label_lc == "safe":
+        safe_index = len(STEP_NAMES)
+    elif label_lc == "review":
+        safe_index = len(STEP_NAMES) - 1
+    else:
+        # Assume sensitive failed on last step for demo
+        safe_index = len(STEP_NAMES) - 2
+
+    html_lines = []
+    for i, step in enumerate(STEP_NAMES):
+        passed = i < safe_index
+        color = "#4CAF50" if passed else "#888888"
+        icon = "✅" if passed else "⏺️"
+        # Fetch timing or zero
+        timing = timings.get(step.lower().replace(" & ", "_").replace(" ", "_"), 0.0)
+        html_lines.append(
+            f'<div style="color:{color}; font-weight:600; margin-bottom:4px;">'
+            f'{icon} {step} <small style="font-weight:normal; color:#555;">({timing:.2f}s)</small></div>'
+        )
+    return "<br>".join(html_lines)
+
+
 with gr.Blocks(title="Sensifilter Analyzer") as demo:
     gr.Markdown("🧪 **Sensifilter Analyzer (Gradio Edition)**")
 
@@ -88,6 +125,9 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
 
         with gr.Column():
             image_annotated = gr.Image(label="🎯 Annotated", type="numpy")
+
+        with gr.Column(scale=1):
+            pipeline_status = gr.HTML(label="Pipeline Progress")
 
     with gr.Row():
         label_output = gr.HTML(label="Label")
@@ -108,6 +148,19 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
         outputs=full_output
     )
 
+    def postprocess(outputs):
+        # outputs = (annotated, label, caption_text, scene, skin, pose, human, blip_conf, yolo_skipped, result, timings)
+        annotated = outputs[0]
+        label = outputs[1]
+        timings = outputs[-1]
+        return (
+            annotated,
+            label_to_badge(label),
+            *outputs[2:-2],
+            outputs[-2],  # full raw result JSON
+            render_pipeline(timings, label),
+        )
+
     run_button.click(
         fn=run_analysis,
         inputs=[image_input],
@@ -122,12 +175,9 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             blip_conf_output,
             yolo_skipped_output,
             full_output,
+            pipeline_status,
         ],
-        postprocess=lambda outputs: (
-            outputs[0],
-            label_to_badge(outputs[1]),
-            *outputs[2:]
-        )
+        postprocess=postprocess
     )
 
 if __name__ == "__main__":
