@@ -1,3 +1,5 @@
+# app_gradio.py
+
 import cv2
 import numpy as np
 import gradio as gr
@@ -11,7 +13,7 @@ DEFAULT_SETTINGS = {
     "enable_keyword_filter": True,
 }
 
-# Static pipeline mockup for UI preview/testing
+# Static mockup for UI testing / display
 def render_pipeline_mockup():
     steps = [
         ("Captioning", 0.12, True),
@@ -113,11 +115,10 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
 
     full_output = gr.JSON(label="📋 Full Raw Result", visible=False)
     toggle_button = gr.Button("Toggle Raw Result")
-    toggle_state = gr.State(False)  # Track visibility state
+    toggle_state = gr.State(False)  # Keep track of toggle state
 
-    def toggle_raw(state):
-        new_state = not state
-        return gr.update(visible=new_state), new_state
+    def toggle_raw(visible):
+        return gr.update(visible=not visible), not visible
 
     toggle_button.click(
         fn=toggle_raw,
@@ -130,9 +131,10 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             annotated = outputs[0]
             if annotated is None:
                 annotated = np.zeros((100, 100, 3), dtype=np.uint8)
-            elif hasattr(annotated, 'convert'):  # Convert PIL Image to numpy
+            elif hasattr(annotated, 'convert'):  # PIL Image -> numpy
                 annotated = np.array(annotated)
             elif not isinstance(annotated, np.ndarray):
+                print(f"WARNING: annotated image is of unexpected type: {type(annotated)}. Using fallback.")
                 annotated = np.zeros((100, 100, 3), dtype=np.uint8)
 
             label = outputs[1] or "unknown"
@@ -151,12 +153,19 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             if not isinstance(pipeline_html, str):
                 pipeline_html = str(pipeline_html)
 
+            # Debug prints
+            print(f"DEBUG: Annotated type: {type(annotated)}")
+            print(f"DEBUG: Label: {label}")
+            print(f"DEBUG: Pipeline HTML type: {type(pipeline_html)}")
+            print(f"DEBUG: Outputs length: {len(outputs)} Expected outputs: 11")
+
+            # Return outputs WITHOUT pipeline_status to avoid length mismatch error
             return (
                 annotated,
                 label_to_badge(label),
                 *sanitized,
                 outputs[-2] if isinstance(outputs[-2], dict) else {},
-                #pipeline_html,  # COMMENTED OUT for test
+                # pipeline_html removed from return here
             )
         except Exception as e:
             print(f"❌ Postprocess error: {e}")
@@ -165,9 +174,8 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 label_to_badge("error"),
                 *[""] * (len(outputs) - 4),
                 {},
-                "",
+                # pipeline_html removed from return here
             )
-
 
     run_button.click(
         fn=run_analysis,
@@ -183,7 +191,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             blip_conf_output,
             yolo_skipped_output,
             full_output,
-            #pipeline_status,  # COMMENTED OUT for test
+            # pipeline_status removed from outputs here
         ],
         postprocess=postprocess,
     )
