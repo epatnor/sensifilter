@@ -16,14 +16,17 @@ def run_analysis(image_path):
 
     annotated = result.get("annotated_image")
 
-    caption_text = result.get("caption", [""])[0]
+    caption_data = result.get("caption", ("", 0.0))
+    caption_text = caption_data[0] if isinstance(caption_data, tuple) else ""
+    blip_confidence = caption_data[1] if isinstance(caption_data, tuple) else 0.0
+
     scene = result.get("scene", "")
     pose = result.get("pose", "")
     contains_human = result.get("contains_human", False)
     label = result.get("label", "")
-    blip_confidence = result.get("blip_confidence", 0.0)
     yolo_skipped = result.get("yolo_skipped", False)
 
+    # Beräkna total skin %
     try:
         boxes = result.get("skin_human_boxes", [])
         total_pixels = 0
