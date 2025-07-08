@@ -4,7 +4,6 @@ import os
 import cv2
 import numpy as np
 from PIL import Image
-import io
 
 print("📦 analyze.py loaded from:", __file__)
 print("🔧 cv2 available:", cv2.__version__)
@@ -64,23 +63,23 @@ def analyze_image(image_path, settings):
         result["max_skin_ratio"] = max((b["skin_ratio"] for b in boxes), default=0)
 
         if boxes:
-            # Annotera bild med bounding boxes
             annotated_bgr = boundingbox.draw_bounding_boxes(image_bgr, boxes)
-
-            # Konvertera till RGB och ev. skala ner
             annotated_rgb = cv2.cvtColor(annotated_bgr, cv2.COLOR_BGR2RGB)
+
             h, w, _ = annotated_rgb.shape
             print(f"🖼 Annotated image size: {w}x{h}")
-            max_size = 1280
+
+            if max(h, w) > 8192:
+                print("⚠️ Warning: Extremely high resolution image loaded (>8K)")
+
+            max_size = 3840
             if max(h, w) > max_size:
                 scale = max_size / max(h, w)
                 annotated_rgb = cv2.resize(annotated_rgb, (int(w * scale), int(h * scale)))
                 print(f"🔧 Resized annotated image to: {annotated_rgb.shape[1]}x{annotated_rgb.shape[0]}")
 
-            # Konvertera till PIL för Gradio
             result["annotated_image"] = Image.fromarray(annotated_rgb)
 
-            # Frigör minne från tunga arrays
             del annotated_bgr
             del annotated_rgb
 
@@ -88,7 +87,6 @@ def analyze_image(image_path, settings):
             print("⚠️ No boxes found, skipping annotation.")
             result["annotated_image"] = None
 
-        # Rensa originalbild – vi använder den inte i UI
         del image_bgr
 
     except Exception as e:
