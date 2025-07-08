@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import gradio as gr
 from sensifilter import analyze
-from pipelineview import label_to_badge, render_pipeline_preview
+from pipelineview import label_to_badge, render_pipeline, render_pipeline_preview
 
 # Default settings for analysis
 DEFAULT_SETTINGS = {
@@ -97,8 +97,11 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
         with gr.Column():
             image_annotated = gr.Image(label="🎯 Annotated", type="numpy")
 
-        # We skip pipeline_status in outputs as it is shown elsewhere in UI
-        # gr.HTML for pipeline preview or mockup can be added elsewhere if needed
+        # Define pipeline_status here to avoid NameError later
+        with gr.Column(scale=1):
+            pipeline_status = gr.HTML(label="Pipeline Progress", value=render_pipeline_preview())
+            gr.Markdown("### Static Mockup Pipeline")
+            pipeline_mockup = gr.HTML(label="Pipeline Mockup", value=render_pipeline_mockup())
 
     with gr.Row():
         label_output = gr.HTML(label="Label")
@@ -155,7 +158,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 label_to_badge(label),
                 *sanitized,
                 outputs[-2] if isinstance(outputs[-2], dict) else {},
-                pipeline_html,  # return pipeline html as last output
+                pipeline_html,
             )
         except Exception as e:
             print(f"❌ Postprocess error: {e}")
@@ -166,8 +169,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 {},
                 "",
             )
-    
-    
+
     run_button.click(
         fn=run_analysis,
         inputs=[image_input],
@@ -182,10 +184,11 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             blip_conf_output,
             yolo_skipped_output,
             full_output,
-            pipeline_status,  # keep this in outputs!
+            pipeline_status,
         ],
         postprocess=postprocess,
     )
+
 
 if __name__ == "__main__":
     print("✅ Environment ready. Launching UI...")
