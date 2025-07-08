@@ -108,15 +108,10 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
     # Handle output processing and HTML rendering
     def postprocess(outputs):
         try:
-            # Sanity check
             if not isinstance(outputs, (list, tuple)) or len(outputs) < 11:
                 raise ValueError("Invalid number of outputs returned")
     
-            # Extract and validate key outputs
-            annotated = outputs[0]
-            if not isinstance(annotated, np.ndarray):
-                annotated = np.zeros((100, 100, 3), dtype=np.uint8)
-    
+            annotated = outputs[0] if isinstance(outputs[0], np.ndarray) else np.zeros((100, 100, 3), dtype=np.uint8)
             label = outputs[1] or "unknown"
             caption = outputs[2]
             scene = outputs[3]
@@ -128,16 +123,14 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             full_result = outputs[9] if isinstance(outputs[9], dict) else {}
             timings = outputs[10] if isinstance(outputs[10], dict) else {}
     
-            # Render pipeline HTML safely
             try:
                 pipeline_html = render_pipeline(timings, label)
                 if not isinstance(pipeline_html, str):
-                    raise TypeError("pipeline_html is not a string")
+                    raise TypeError("render_pipeline did not return a string")
             except Exception as e:
                 print(f"⚠️ render_pipeline failure: {e}")
                 pipeline_html = render_pipeline_preview()
-            
-                
+    
             return (
                 annotated,
                 label_to_badge(label),
@@ -153,7 +146,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             )
     
         except Exception as e:
-            print(f"❌ Postprocess error: {e}")
+            print(f"❌ Postprocess total failure: {e}")
             return (
                 np.zeros((100, 100, 3), dtype=np.uint8),
                 label_to_badge("error"),
@@ -161,7 +154,6 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 {},
                 render_pipeline_preview(),
             )
-
 
     # Bind button click
     run_button.click(
