@@ -107,4 +107,9 @@ def analyze_image(image_path, settings):
     except Exception as e:
         result["label"] = f"Error: {e}"
 
+        # === Mark if YOLO was skipped ===
+        result["yolo_skipped"] = not run_yolo
+        result["blip_confidence"] = result["caption"][1]
+
+
     return result
