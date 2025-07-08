@@ -79,10 +79,10 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
         with gr.Column():
             image_annotated = gr.Image(label="🎯 Annotated", type="numpy")
         with gr.Column(scale=1):
-            pipeline_status = gr.HTML(label="Pipeline Progress", value=render_pipeline_preview())
+            pipeline_status = gr.HTML(value=render_pipeline_preview(), show_label=False)
 
     with gr.Row():
-        label_output = gr.HTML(show_label=False)  # Changed to HTML safely
+        label_output = gr.Markdown(show_label=False)  # ✅ FIX: Markdown tolkar HTML utan [object Object]
         caption_output = gr.Textbox(label="Caption")
         scene_output = gr.Textbox(label="Scene")
         skin_output = gr.Number(label="Skin %")
@@ -95,7 +95,6 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
     toggle_button = gr.Button("Toggle Raw Result")
     toggle_state = gr.State(False)
 
-    # Toggle JSON visibility
     def toggle_raw(visible):
         return gr.update(visible=not visible), not visible
 
@@ -105,7 +104,6 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
         outputs=[full_output, toggle_state],
     )
 
-    # Handle output processing and HTML rendering
     def postprocess(outputs):
         try:
             if not isinstance(outputs, (list, tuple)) or len(outputs) < 11:
@@ -135,8 +133,6 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             if not isinstance(label_html, str):
                 label_html = str(label_html)
 
-            print("✅ Label HTML:", repr(label_html))
-
             return (
                 annotated,
                 label_html,
@@ -161,7 +157,6 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 render_pipeline_preview(),
             )
 
-    # Bind button click
     run_button.click(
         fn=run_analysis,
         inputs=[image_input],
