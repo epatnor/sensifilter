@@ -13,25 +13,6 @@ DEFAULT_SETTINGS = {
     "enable_keyword_filter": True,
 }
 
-# Static mockup for pipeline preview
-def render_pipeline_mockup():
-    steps = [
-        ("Captioning", 0.12, True),
-        ("Keyword Matching", 0.08, True),
-        ("Scene Classification", 0.15, False),
-        ("Pose Detection", 0.07, False),
-        ("YOLO & Skin Detection", 0.22, False),
-    ]
-    html_lines = []
-    for step, time_sec, passed in steps:
-        color = "#4CAF50" if passed else "#888888"
-        icon = "✅" if passed else "⏺️"
-        html_lines.append(
-            f'<div style="color:{color}; font-weight:600; margin-bottom:4px;">'
-            f'{icon} {step} <small style="font-weight:normal; color:#555;">({time_sec:.2f}s)</small></div>'
-        )
-    return "<br>".join(html_lines)
-
 # Run analysis pipeline
 def run_analysis(image_path):
     print(f"📷 Received image: {image_path}")
