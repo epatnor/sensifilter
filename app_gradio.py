@@ -112,7 +112,12 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             for i, o in enumerate(outputs):
                 print(f" Output[{i}] type: {type(o)}")
             
-            annotated = outputs[0] or np.zeros((100, 100, 3), dtype=np.uint8)
+            annotated = outputs[0]
+            if annotated is None:
+                annotated = np.zeros((100, 100, 3), dtype=np.uint8)
+            elif hasattr(annotated, 'convert'):  # PIL image check
+                annotated = np.array(annotated)
+            
             label = outputs[1] or "unknown"
             timings = outputs[-1] or {}
     
@@ -163,6 +168,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
         ],
         postprocess=postprocess
     )
+
 
 if __name__ == "__main__":
     print("✅ Environment ready. Launching UI...")
