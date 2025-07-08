@@ -15,10 +15,18 @@ def run_analysis(image_path):
     result = analyze.analyze_image(image_path, DEFAULT_SETTINGS)
 
     annotated = result.get("annotated_image")
+    if annotated is None:
+        import numpy as np
+        annotated = np.zeros((100, 100, 3), dtype=np.uint8)
 
+    # Läs caption tuple säkert
     caption_data = result.get("caption", ("", 0.0))
-    caption_text = caption_data[0] if isinstance(caption_data, tuple) else ""
-    blip_confidence = caption_data[1] if isinstance(caption_data, tuple) else 0.0
+    if not isinstance(caption_data, (tuple, list)) or len(caption_data) < 2:
+        caption_text = str(caption_data) if caption_data else ""
+        blip_confidence = 0.0
+    else:
+        caption_text = caption_data[0] if caption_data[0] else ""
+        blip_confidence = caption_data[1] if isinstance(caption_data[1], (float, int)) else 0.0
 
     scene = result.get("scene", "")
     pose = result.get("pose", "")
@@ -26,7 +34,6 @@ def run_analysis(image_path):
     label = result.get("label", "")
     yolo_skipped = result.get("yolo_skipped", False)
 
-    # Beräkna total skin %
     try:
         boxes = result.get("skin_human_boxes", [])
         total_pixels = 0
@@ -54,6 +61,7 @@ def run_analysis(image_path):
         yolo_skipped,
         result
     )
+
 
 def label_to_badge(label):
     # Map label to color
