@@ -1,10 +1,8 @@
-# app_gradio.py
-
 import cv2
 import numpy as np
 import gradio as gr
 from sensifilter import analyze
-from pipelineview import label_to_badge, render_pipeline, render_pipeline_preview
+from pipelineview import label_to_badge, render_pipeline_preview
 
 # Default settings for analysis
 DEFAULT_SETTINGS = {
@@ -31,6 +29,7 @@ def render_pipeline_mockup():
             f'{icon} {step} <small style="font-weight:normal; color:#555;">({time_sec:.2f}s)</small></div>'
         )
     return "<br>".join(html_lines)
+
 
 def run_analysis(image_path):
     print(f"📷 Received image: {image_path}")
@@ -98,10 +97,8 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
         with gr.Column():
             image_annotated = gr.Image(label="🎯 Annotated", type="numpy")
 
-        with gr.Column(scale=1):
-            pipeline_status = gr.HTML(label="Pipeline Progress", value=render_pipeline_preview())
-            gr.Markdown("### Static Mockup Pipeline")
-            pipeline_mockup = gr.HTML(label="Pipeline Mockup", value=render_pipeline_mockup())
+        # We skip pipeline_status in outputs as it is shown elsewhere in UI
+        # gr.HTML for pipeline preview or mockup can be added elsewhere if needed
 
     with gr.Row():
         label_output = gr.HTML(label="Label")
@@ -115,7 +112,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
 
     full_output = gr.JSON(label="📋 Full Raw Result", visible=False)
     toggle_button = gr.Button("Toggle Raw Result")
-    toggle_state = gr.State(False)  # Keep track of toggle state
+    toggle_state = gr.State(False)  # Track toggle state
 
     def toggle_raw(visible):
         return gr.update(visible=not visible), not visible
@@ -149,23 +146,18 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 else:
                     sanitized.append(str(o))
 
-            # pipeline_html = render_pipeline(timings, label)
-            # if not isinstance(pipeline_html, str):
-            #     pipeline_html = str(pipeline_html)
+            # pipeline_status removed from outputs to match UI component count
 
             # Debug prints
             print(f"DEBUG: Annotated type: {type(annotated)}")
             print(f"DEBUG: Label: {label}")
-            # print(f"DEBUG: Pipeline HTML type: {type(pipeline_html)}")
-            print(f"DEBUG: Outputs length: {len(outputs)} Expected outputs: 11")
+            print(f"DEBUG: Outputs length: {len(outputs)} Expected outputs: 10")
 
-            # Return outputs WITHOUT pipeline_status to avoid length mismatch error
             return (
                 annotated,
                 label_to_badge(label),
                 *sanitized,
                 outputs[-2] if isinstance(outputs[-2], dict) else {},
-                # pipeline_html removed from return here
             )
         except Exception as e:
             print(f"❌ Postprocess error: {e}")
@@ -174,8 +166,8 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 label_to_badge("error"),
                 *[""] * (len(outputs) - 4),
                 {},
-                # pipeline_html removed from return here
             )
+
 
     run_button.click(
         fn=run_analysis,
@@ -191,7 +183,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             blip_conf_output,
             yolo_skipped_output,
             full_output,
-            # pipeline_status removed from outputs here
+            # pipeline_status output removed here
         ],
         postprocess=postprocess,
     )
