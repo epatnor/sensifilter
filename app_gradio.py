@@ -10,6 +10,14 @@ DEFAULT_SETTINGS = {
     "enable_keyword_filter": True,
 }
 
+STEP_NAMES = [
+    "Captioning",
+    "Keyword Matching",
+    "Scene Classification",
+    "Pose Detection",
+    "YOLO & Skin Detection",
+]
+
 def run_analysis(image_path):
     print(f"📷 Received image: {image_path}")
     result = analyze.analyze_image(image_path, DEFAULT_SETTINGS)
@@ -44,7 +52,7 @@ def run_analysis(image_path):
             total_pixels += area
             total_skin_pixels += skin_pixels
         skin_percent = round((total_skin_pixels / total_pixels) * 100, 2) if total_pixels > 0 else 0.0
-    except:
+    except Exception:
         skin_percent = 0.0
 
     timings = result.get("timings", {})
@@ -63,6 +71,7 @@ def run_analysis(image_path):
         result,
         timings_clean,
     )
+
 
 with gr.Blocks(title="Sensifilter Analyzer") as demo:
     gr.Markdown("🧪 **Sensifilter Analyzer (Gradio Edition)**")
@@ -111,6 +120,11 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             if not isinstance(pipeline_html, str):
                 pipeline_html = str(pipeline_html)
 
+            # Debug prints - uncomment if needed
+            # print(f"Annotated type: {type(annotated)}")
+            # print(f"Label: {label}")
+            # print(f"Pipeline HTML type: {type(pipeline_html)}")
+
             return (
                 annotated,
                 label_to_badge(label),
@@ -125,7 +139,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 label_to_badge("error"),
                 *[""] * (len(outputs) - 4),
                 {},
-                render_pipeline_preview(),
+                "",
             )
 
     run_button.click(
