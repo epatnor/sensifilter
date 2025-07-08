@@ -1,115 +1,121 @@
 // static/main.js
 
-// Run when DOM is loaded
-window.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
   const imageInput = document.getElementById("imageInput");
   const preview = document.getElementById("preview");
   const analyzeBtn = document.getElementById("analyzeBtn");
   const resultBox = document.getElementById("result");
+  const tableBody = document.querySelector("#pipelineTable tbody");
 
-  // Show image preview
+  // Preview selected image
   imageInput.addEventListener("change", () => {
     const file = imageInput.files[0];
     if (file) {
       preview.src = URL.createObjectURL(file);
-      resultBox.innerHTML = renderPipelineSkeleton();
+      resultBox.innerHTML = "";
+      resetTable();
     }
   });
 
-  // Trigger analysis
+  // Analyze button click
   analyzeBtn.addEventListener("click", async () => {
     const file = imageInput.files[0];
     if (!file) return;
+
+    resultBox.innerHTML = "🔄 Processing...";
+    updateTableStatus("running");
 
     const formData = new FormData();
     formData.append("file", file);
 
     try {
-      resultBox.innerHTML = renderPipelineSkeleton(); // Reset with placeholders
-
-      const res = await fetch("/analyze", {
-        method: "POST",
-        body: formData,
-      });
-
+      const res = await fetch("/analyze", { method: "POST", body: formData });
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
 
-      resultBox.innerHTML = renderResult(data);
+      if (data.error) {
+        resultBox.innerHTML = `<span class="error">❌ Error: ${data.error}</span>`;
+        updateTableStatus("error");
+        return;
+      }
+
+      // Swap to annotated image if present
+      if (data.annotated_url) {
+        preview.src = data.annotated_url;
+      }
+
+      // Render results
+      renderSummary(data);
+      renderTable(data);
 
     } catch (err) {
-      resultBox.innerHTML = `<div class="error">❌ Error: ${err.message}</div>`;
+      resultBox.innerHTML = `<span class="error">❌ ${err.message}</span>`;
     }
   });
+
+  // Pre-fill table with all steps in gray
+  function resetTable() {
+    const steps = [
+      ["Caption", "BLIP model", "-", "-"],
+      ["Scene", "Places365", "-", "-"],
+      ["Keywords", "Keyword matcher", "-", "-"],
+      ["Pose", "Pose detection", "-", "-"],
+      ["Skin", "YOLOv8 + HSV", "-", "-"]
+    ];
+    tableBody.innerHTML = steps.map(row =>
+      `<tr class="pending"><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td>${row[3]}</td></tr>`
+    ).join("");
+  }
+
+  // Replace placeholders with actual data
+  function renderTable(data) {
+    const timings = data.timings || {};
+    const rows = [
+      ["Caption", "BLIP model", data.caption?.[0] || "-", timings.caption],
+      ["Scene", "Places365", data.scene || "-", timings.scene_classification],
+      ["Keywords", "Keyword matcher", data.keywords?.join(", ") || "-", timings.keyword_matching],
+      ["Pose", "Pose detection", data.pose || "-", timings.pose_detection],
+      ["Skin", "YOLOv8 + HSV", (data.max_skin_ratio * 100).toFixed(0) + "%", timings.yolo_skin_detection]
+    ];
+    tableBody.innerHTML = rows.map(([step, method, result, time]) =>
+      `<tr><td>${step}</td><td>${method}</td><td>${result}</td><td>${time ? time.toFixed(2) + "s" : "-"}</td></tr>`
+    ).join("");
+  }
+
+  // Write summary text
+  function renderSummary(data) {
+    const label = data.label === "safe" ? "🟢 Safe" : "🔴 Flagged";
+    const conf = Math.round(data.blip_confidence * 100) + "%";
+    const skin = Math.round(data.max_skin_ratio * 100) + "%";
+
+    resultBox.innerHTML = `
+      <div class="summary ${data.label}">
+        <strong>${label}</strong><br><br>
+        <b>Caption:</b> ${data.caption?.[0] || "-"}<br>
+        <b>Scene:</b> ${data.scene || "-"}<br>
+        <b>BLIP Confidence:</b> ${conf}<br>
+        <b>Contains Human:</b> ${data.contains_human ? "Yes" : "No"}<br>
+        <b>Pose Detected:</b> ${data.pose || "-"}<br>
+        <b>Skin Exposure (max):</b> ${skin}
+      </div>
+    `;
+  }
+
+  // Update pre-filled table with loading status
+  function updateTableStatus(state) {
+    if (state === "running") {
+      tableBody.querySelectorAll("tr").forEach(tr => {
+        tr.classList.remove("pending");
+        tr.classList.add("processing");
+      });
+    }
+    if (state === "error") {
+      tableBody.querySelectorAll("tr").forEach(tr => {
+        tr.classList.remove("processing");
+        tr.classList.add("error");
+      });
+    }
+  }
+
+  // Init
+  resetTable();
 });
-
-// Render empty pipeline with placeholders
-function renderPipelineSkeleton() {
-  const steps = [
-    ["Caption", "BLIP model", "…"],
-    ["Scene", "Places365", "…"],
-    ["Keywords", "Keyword matcher", "…"],
-    ["Pose", "Pose detection", "…"],
-    ["Skin", "YOLOv8 + HSV", "…"]
-  ];
-  return renderTable(steps, true);
-}
-
-// Render final results
-function renderResult(data) {
-  const steps = [
-    ["Caption", "BLIP model", data.caption?.[0] || "-"],
-    ["Scene", "Places365", data.scene || "-"],
-    ["Keywords", "Keyword matcher", (data.keywords || []).join(", ") || "-"],
-    ["Pose", "Pose detection", data.pose || "-"],
-    ["Skin", "YOLOv8 + HSV", `${Math.round(data.max_skin_ratio * 100)}%`]
-  ];
-
-  const timings = data.timings || {};
-  const timingLookup = {
-    "caption": "Caption",
-    "scene_classification": "Scene",
-    "keyword_matching": "Keywords",
-    "pose_detection": "Pose",
-    "yolo_skin_detection": "Skin"
-  };
-
-  const finalTable = steps.map(([step, method, output]) => {
-    const timing = Object.entries(timingLookup).find(([key, val]) => val === step);
-    const time = timing && timings[timing[0]] ? `${timings[timing[0]].toFixed(2)}s` : "–";
-    return [step, method, output, time];
-  });
-
-  const label = data.label === "safe"
-    ? `<div class="badge safe">🟢 Safe</div>`
-    : `<div class="badge unsafe">🔴 Unsafe</div>`;
-
-  return `
-    ${label}
-    <div class="section">
-      <b>Caption:</b> ${data.caption?.[0] || "-"}<br>
-      <b>Scene:</b> ${data.scene || "-"}<br>
-      <b>BLIP Confidence:</b> ${(data.blip_confidence * 100).toFixed(1)}%<br>
-      <b>Contains Human:</b> ${data.contains_human ? "Yes" : "No"}<br>
-      <b>Pose Detected:</b> ${data.pose || "-"}<br>
-      <b>Skin Exposure (max):</b> ${Math.round(data.max_skin_ratio * 100)}%<br>
-    </div>
-    <details class="timing-section" open>
-      <summary>⏱️ Timing per step</summary>
-      ${renderTable(finalTable)}
-    </details>
-  `;
-}
-
-// Render compact results table
-function renderTable(rows, placeholder = false) {
-  const header = `
-    <div class="table-row header">
-      <div>Step</div><div>Method</div><div>Result</div><div>Time</div>
-    </div>`;
-  const body = rows.map(row => `
-    <div class="table-row ${placeholder ? "placeholder" : ""}">
-      <div>${row[0]}</div><div>${row[1]}</div><div>${row[2]}</div><div>${row[3] || "–"}</div>
-    </div>`).join("");
-  return `<div class="table">${header}${body}</div>`;
-}
