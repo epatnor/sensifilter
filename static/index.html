@@ -1,29 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Sensifilter</title>
-  <link rel="stylesheet" href="/static/styles.css" />
-  <script defer src="/static/main.js"></script>
-</head>
 <body>
 
   <h1>🧪 Sensifilter</h1>
 
-  <label id="uploadBox" tabindex="0" role="button" aria-label="Upload image">
-    <div class="upload-icon">⬆️</div>
-    <div class="upload-text">Click here to upload image</div>
-  </label>
-  <input type="file" id="imageInput" accept="image/*" style="display:none" />
+  <div id="mainSection" class="main-section">
+    <label id="uploadBox" tabindex="0" role="button" aria-label="Upload image">
+      <div class="upload-icon">⬆️</div>
+      <div class="upload-text">Click here to upload image</div>
+    </label>
+    <input type="file" id="imageInput" accept="image/*" style="display:none" />
 
-  <img id="preview" class="preview" alt="Input preview" />
+    <div id="imageControlArea" class="image-control-area" style="display:none;">
+      <img id="preview" class="preview" alt="Input preview" />
+      <img id="annotated" class="preview" alt="Annotated result" style="display:none;" />
+      <div class="right-panel">
+        <button id="analyzeBtn" disabled>Run Analysis</button>
+        <div id="summary" class="summary"></div>
+      </div>
+    </div>
+  </div>
 
-  <button id="analyzeBtn" disabled>Run Analysis</button>
-
-  <div id="summary" class="summary"></div>
-
-  <img id="annotated" class="preview" alt="Annotated result" style="display:none;" />
-
+  <!-- Pipeline table stays below -->
   <table id="pipelineTable" aria-label="Analysis pipeline steps">
     <thead>
       <tr>
@@ -41,4 +37,3 @@
   <div id="result" class="error" style="display:none;"></div>
 
 </body>
-</html>
