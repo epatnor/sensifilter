@@ -1,3 +1,4 @@
+<!-- static/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,19 +11,21 @@
 
   <h1>🧪 Sensifilter</h1>
 
-  <label id="uploadBox" tabindex="0" aria-label="Upload Image">
-    <div class="icon">⬆️</div>
-    Click here to upload image
+  <label id="uploadBox" tabindex="0" role="button" aria-label="Upload image">
+    <div class="upload-icon">⬆️</div>
+    <div class="upload-text">Click here to upload image</div>
     <input type="file" id="imageInput" accept="image/*" />
   </label>
 
-  <img id="preview" alt="Input image preview" />
+  <img id="preview" class="preview" alt="Input preview" />
 
   <button id="analyzeBtn" disabled>Run Analysis</button>
 
-  <div id="summary"></div>
+  <div id="summary" class="summary"></div>
 
-  <table id="pipelineTable" aria-live="polite">
+  <img id="annotated" class="preview" alt="Annotated result" style="display:none;" />
+
+  <table id="pipelineTable" aria-label="Analysis pipeline steps">
     <thead>
       <tr>
         <th>Step</th>
@@ -31,10 +34,12 @@
         <th>Time (s)</th>
       </tr>
     </thead>
-    <tbody id="pipelineBody"></tbody>
+    <tbody id="pipelineBody">
+      <!-- Dynamically populated by main.js -->
+    </tbody>
   </table>
 
-  <div id="result"></div>
+  <div id="result" class="error" style="display:none;"></div>
 
 </body>
 </html>
