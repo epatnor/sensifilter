@@ -4,7 +4,6 @@ import torch
 import cv2
 import numpy as np
 from ultralytics import YOLO
-from .utils import detect_skin
 
 print("📦 boundingbox.py loaded from:", __file__)
 
