@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ["keyword_matching", "Keyword Filter"]
   ];
 
+  // Initiera pipeline-tabellen med grått "pending"-utseende
   function initPipelineTable() {
     pipelineBody.innerHTML = "";
     for (const [key, label] of steps) {
@@ -32,6 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // Uppdatera ett steg med resultat och tid, ta bort grå ton
   function updateStep(key, result, time) {
     const row = document.getElementById(`step-${key}`);
     if (row) {
