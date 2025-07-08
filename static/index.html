@@ -11,11 +11,36 @@
 
   <h1>🧪 Sensifilter</h1>
 
+  <!-- Bilduppladdning -->
   <input type="file" id="imageInput" accept="image/*">
-  <img id="preview" class="preview" />
+  <img id="preview" class="preview" alt="Input preview" />
+
+  <!-- Körningsknapp -->
   <button id="analyzeBtn">Analyze Image</button>
 
-  <div id="result">...</div>
+  <!-- Sammanfattning -->
+  <div id="summary" class="summary"></div>
+
+  <!-- Annoterad bild efter analys -->
+  <img id="annotated" class="preview" alt="Annotated result" style="display:none;">
+
+  <!-- Process-tabell -->
+  <table id="pipelineTable">
+    <thead>
+      <tr>
+        <th>Step</th>
+        <th>Method</th>
+        <th>Result</th>
+        <th>Time (s)</th>
+      </tr>
+    </thead>
+    <tbody id="pipelineBody">
+      <!-- Dynamiskt ifylld av main.js -->
+    </tbody>
+  </table>
+
+  <!-- Fel eller råoutput -->
+  <div id="result" class="error" style="display:none;"></div>
 
 </body>
 </html>
