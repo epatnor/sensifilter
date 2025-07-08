@@ -128,7 +128,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             annotated = outputs[0]
             if annotated is None:
                 annotated = np.zeros((100, 100, 3), dtype=np.uint8)
-            elif hasattr(annotated, 'convert'):  # PIL Image -> numpy
+            elif hasattr(annotated, 'convert'):
                 annotated = np.array(annotated)
             elif not isinstance(annotated, np.ndarray):
                 print(f"WARNING: annotated image is of unexpected type: {type(annotated)}. Using fallback.")
@@ -146,15 +146,16 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 else:
                     sanitized.append(str(o))
     
-            print(f"DEBUG: Annotated type: {type(annotated)}")
-            print(f"DEBUG: Label: {label}")
-            print(f"DEBUG: Outputs length: {len(outputs)} Expected outputs: 10")
+            pipeline_html = render_pipeline(timings, label)
+            if not isinstance(pipeline_html, str):
+                pipeline_html = str(pipeline_html)
     
             return (
                 annotated,
                 label_to_badge(label),
                 *sanitized,
                 outputs[-2] if isinstance(outputs[-2], dict) else {},
+                pipeline_html,  # return pipeline html as last output
             )
         except Exception as e:
             print(f"❌ Postprocess error: {e}")
@@ -163,6 +164,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 label_to_badge("error"),
                 *[""] * (len(outputs) - 4),
                 {},
+                "",
             )
     
     
@@ -180,10 +182,10 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             blip_conf_output,
             yolo_skipped_output,
             full_output,
+            pipeline_status,  # keep this in outputs!
         ],
         postprocess=postprocess,
     )
-
 
 if __name__ == "__main__":
     print("✅ Environment ready. Launching UI...")
