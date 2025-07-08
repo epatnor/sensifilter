@@ -1,3 +1,5 @@
+# app_gradio.py
+
 import cv2
 import numpy as np
 import gradio as gr
@@ -11,7 +13,7 @@ DEFAULT_SETTINGS = {
     "enable_keyword_filter": True,
 }
 
-# Static mockup for UI testing / display
+# Static mockup for pipeline preview
 def render_pipeline_mockup():
     steps = [
         ("Captioning", 0.12, True),
@@ -30,7 +32,7 @@ def render_pipeline_mockup():
         )
     return "<br>".join(html_lines)
 
-
+# Run analysis pipeline
 def run_analysis(image_path):
     print(f"📷 Received image: {image_path}")
     result = analyze.analyze_image(image_path, DEFAULT_SETTINGS)
@@ -85,7 +87,7 @@ def run_analysis(image_path):
         timings_clean,
     )
 
-
+# Build Gradio interface
 with gr.Blocks(title="Sensifilter Analyzer") as demo:
     gr.Markdown("🧪 **Sensifilter Analyzer (Gradio Edition)**")
 
@@ -93,11 +95,8 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
         with gr.Column():
             image_input = gr.Image(label="📤 Upload image", type="filepath")
             run_button = gr.Button("Run Analysis", variant="primary")
-
         with gr.Column():
             image_annotated = gr.Image(label="🎯 Annotated", type="numpy")
-
-        # Define pipeline_status here to avoid NameError later
         with gr.Column(scale=1):
             pipeline_status = gr.HTML(label="Pipeline Progress", value=render_pipeline_preview())
             gr.Markdown("### Static Mockup Pipeline")
@@ -115,8 +114,9 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
 
     full_output = gr.JSON(label="📋 Full Raw Result", visible=False)
     toggle_button = gr.Button("Toggle Raw Result")
-    toggle_state = gr.State(False)  # Track toggle state
+    toggle_state = gr.State(False)
 
+    # Toggle JSON visibility
     def toggle_raw(visible):
         return gr.update(visible=not visible), not visible
 
@@ -126,20 +126,16 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
         outputs=[full_output, toggle_state],
     )
 
+    # Handle output processing and HTML rendering
     def postprocess(outputs):
         try:
             annotated = outputs[0]
-            if annotated is None:
+            if annotated is None or not isinstance(annotated, np.ndarray):
                 annotated = np.zeros((100, 100, 3), dtype=np.uint8)
-            elif hasattr(annotated, 'convert'):
-                annotated = np.array(annotated)
-            elif not isinstance(annotated, np.ndarray):
-                print(f"WARNING: annotated image is of unexpected type: {type(annotated)}. Using fallback.")
-                annotated = np.zeros((100, 100, 3), dtype=np.uint8)
-    
+
             label = outputs[1] or "unknown"
             timings = outputs[-1] or {}
-    
+
             sanitized = []
             for o in outputs[2:-2]:
                 if o is None:
@@ -148,11 +144,8 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                     sanitized.append(o)
                 else:
                     sanitized.append(str(o))
-    
+
             pipeline_html = render_pipeline(timings, label)
-            if not isinstance(pipeline_html, str):
-                pipeline_html = str(pipeline_html)
-    
             return (
                 annotated,
                 label_to_badge(label),
@@ -160,23 +153,17 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 outputs[-2] if isinstance(outputs[-2], dict) else {},
                 pipeline_html,
             )
-            
         except Exception as e:
             print(f"❌ Postprocess error: {e}")
             return (
-                np.zeros((100, 100, 3), dtype=np.uint8),  # image_annotated
-                label_to_badge("error"),                  # label_output
-                "",                                       # caption
-                "",                                       # scene
-                0.0,                                      # skin_percent
-                "",                                       # pose
-                False,                                    # contains_human
-                0.0,                                      # blip_confidence
-                False,                                    # yolo_skipped
-                {},                                       # full_output
-                render_pipeline_preview(),               # pipeline_status
+                np.zeros((100, 100, 3), dtype=np.uint8),
+                label_to_badge("error"),
+                "", "", 0.0, "", False, 0.0, False,
+                {},
+                render_pipeline_preview(),
             )
 
+    # Bind button click
     run_button.click(
         fn=run_analysis,
         inputs=[image_input],
@@ -196,7 +183,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
         postprocess=postprocess,
     )
 
-
+# Start app
 if __name__ == "__main__":
     print("✅ Environment ready. Launching UI...")
     demo.launch()
