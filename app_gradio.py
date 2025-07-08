@@ -2,20 +2,13 @@ import cv2
 import numpy as np
 import gradio as gr
 from sensifilter import analyze
+from pipelineview import label_to_badge, render_pipeline, render_pipeline_preview
 
 DEFAULT_SETTINGS = {
     "enable_scene_filter": True,
     "enable_caption_filter": True,
     "enable_keyword_filter": True,
 }
-
-STEP_NAMES = [
-    "Captioning",
-    "Keyword Matching",
-    "Scene Classification",
-    "Pose Detection",
-    "YOLO & Skin Detection",
-]
 
 def run_analysis(image_path):
     print(f"📷 Received image: {image_path}")
@@ -71,52 +64,6 @@ def run_analysis(image_path):
         timings_clean,
     )
 
-
-def label_to_badge(label):
-    colors = {
-        "safe": "#4CAF50",
-        "sensitive": "#F44336",
-        "review": "#FF9800",
-    }
-    color = colors.get(label.lower(), "#757575")
-    return f"""<span style="
-        background-color: {color};
-        color: white;
-        padding: 6px 12px;
-        border-radius: 12px;
-        font-weight: 600;
-        font-family: monospace;
-        display: inline-block;
-        min-width: 80px;
-        text-align: center;
-    ">{label.upper()}</span>"""
-
-
-def render_pipeline(timings, label):
-    if not timings:
-        timings = {}
-    label_lc = label.lower()
-    if label_lc == "safe":
-        safe_index = len(STEP_NAMES)
-    elif label_lc == "review":
-        safe_index = len(STEP_NAMES) - 1
-    else:
-        safe_index = len(STEP_NAMES) - 2
-
-    html_lines = []
-    for i, step in enumerate(STEP_NAMES):
-        passed = i < safe_index
-        color = "#4CAF50" if passed else "#888888"
-        icon = "✅" if passed else "⏺️"
-        timing_key = step.lower().replace(" & ", "_").replace(" ", "_")
-        timing = timings.get(timing_key, 0.0)
-        html_lines.append(
-            f'<div style="color:{color}; font-weight:600; margin-bottom:4px;">'
-            f'{icon} {step} <small style="font-weight:normal; color:#555;">({timing:.2f}s)</small></div>'
-        )
-    return "<br>".join(html_lines)
-
-
 with gr.Blocks(title="Sensifilter Analyzer") as demo:
     gr.Markdown("🧪 **Sensifilter Analyzer (Gradio Edition)**")
 
@@ -129,7 +76,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             image_annotated = gr.Image(label="🎯 Annotated", type="numpy")
 
         with gr.Column(scale=1):
-            pipeline_status = gr.HTML(label="Pipeline Progress")
+            pipeline_status = gr.HTML(label="Pipeline Progress", value=render_pipeline_preview())
 
     with gr.Row():
         label_output = gr.HTML(label="Label")
@@ -156,17 +103,20 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             label = outputs[1] or "unknown"
             timings = outputs[-1] or {}
 
-            # Sanitize outputs for none or empty
             sanitized = []
             for o in outputs[2:-2]:
                 sanitized.append(o if o is not None else "")
+
+            pipeline_html = render_pipeline(timings, label)
+            if not isinstance(pipeline_html, str):
+                pipeline_html = str(pipeline_html)
 
             return (
                 annotated,
                 label_to_badge(label),
                 *sanitized,
                 outputs[-2] or {},
-                render_pipeline(timings, label),
+                pipeline_html,
             )
         except Exception as e:
             print(f"❌ Postprocess error: {e}")
@@ -175,7 +125,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 label_to_badge("error"),
                 *[""] * (len(outputs) - 4),
                 {},
-                "",
+                render_pipeline_preview(),
             )
 
     run_button.click(
