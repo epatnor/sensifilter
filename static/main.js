@@ -55,6 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
       summary.textContent = "";
       resultBox.style.display = "none";
       initPipelineTable();
+      analyzeBtn.disabled = false; // Aktivera knappen nu när fil är vald
     } else {
       preview.style.display = "none";
       annotated.style.display = "none";
@@ -62,6 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
       summary.textContent = "";
       resultBox.style.display = "none";
       initPipelineTable();
+      analyzeBtn.disabled = true; // Inaktivera knappen när ingen fil
     }
   });
 
