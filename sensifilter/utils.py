@@ -5,13 +5,13 @@ import numpy as np
 from PIL import Image
 
 
-# PIL-RGB (för basic analys)
+# Laddar bild som PIL-RGB (för analys som BLIP eller captioning)
 def load_image(image_path):
     with Image.open(image_path) as img:
         return img.convert("RGB")
 
 
-# OpenCV-BGR (för YOLO/boxes)
+# Laddar bild som OpenCV-BGR (för YOLO, boxar m.m.)
 def load_image_bgr(image_path):
     image = cv2.imread(image_path)
     if image is None:
@@ -19,27 +19,24 @@ def load_image_bgr(image_path):
     return image
 
 
+# Skalar en PIL-bild till angiven storlek (används av vissa modeller)
 def resize_image(image, size=(224, 224)):
-    """
-    Resizes an image to a given size.
-    """
     return image.resize(size)
 
 
+# Beräknar uppskattad andel hud i en bild baserat på RGB-tröskelregler
 def estimate_skin_percent(image_path):
-    """
-    Naiv uppskattning av hudpixlar baserat på färgintervall i RGB.
-    Returnerar % av bilden som tros vara hud.
-    """
     image = load_image(image_path)
     pixels = list(image.getdata())
     skin_pixels = 0
 
     for pixel in pixels:
         r, g, b = pixel
-        if (r > 95 and g > 40 and b > 20 and
+        if (
+            r > 95 and g > 40 and b > 20 and
             max(pixel) - min(pixel) > 15 and
-            abs(r - g) > 15 and r > g and r > b):
+            abs(r - g) > 15 and r > g and r > b
+        ):
             skin_pixels += 1
 
     total_pixels = len(pixels)
@@ -47,15 +44,3 @@ def estimate_skin_percent(image_path):
         return 0.0
 
     return (skin_pixels / total_pixels) * 100
-
-
-# === YCrCb skin detection for boundingbox crops ===
-def detect_skin(image_bgr):
-    """
-    Returnerar en binär mask av hudregioner i en BGR-bild med YCrCb-färgmodell.
-    """
-    img_ycrcb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2YCrCb)
-    lower = np.array([0, 133, 77], dtype=np.uint8)
-    upper = np.array([255, 173, 127], dtype=np.uint8)
-    mask = cv2.inRange(img_ycrcb, lower, upper)
-    return mask
