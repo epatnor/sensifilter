@@ -8,16 +8,14 @@ STEP_NAMES = [
     "YOLO & Skin Detection",
 ]
 
+# Return a colored badge HTML based on the label
 def label_to_badge(label):
-    """
-    Return a colored badge HTML based on the label.
-    """
     colors = {
-        "safe": "#4CAF50",       # green
-        "sensitive": "#F44336",  # red
-        "review": "#FF9800",     # orange
+        "safe": "#4CAF50",
+        "sensitive": "#F44336",
+        "review": "#FF9800",
     }
-    color = colors.get(label.lower(), "#757575")  # fallback gray
+    color = colors.get(label.lower(), "#757575")
     return f"""<span style="
         background-color: {color};
         color: white;
@@ -30,42 +28,39 @@ def label_to_badge(label):
         text-align: center;
     ">{label.upper()}</span>"""
 
+# Build an HTML list displaying the pipeline steps
 def render_pipeline(timings, label):
-    """
-    Build an HTML list displaying the pipeline steps.
-    Green check marks for passed steps, gray circles otherwise.
-    Shows timings with two decimals.
-    """
-    if not timings:
-        timings = {}
+    try:
+        if not timings or not isinstance(timings, dict):
+            timings = {}
 
-    label_lc = label.lower()
-    if label_lc == "safe":
-        safe_index = len(STEP_NAMES)
-    elif label_lc == "review":
-        safe_index = len(STEP_NAMES) - 1
-    else:
-        safe_index = len(STEP_NAMES) - 2
+        label_lc = (label or "").lower()
+        if label_lc == "safe":
+            safe_index = len(STEP_NAMES)
+        elif label_lc == "review":
+            safe_index = len(STEP_NAMES) - 1
+        else:
+            safe_index = len(STEP_NAMES) - 2
 
-    html_lines = []
-    for i, step in enumerate(STEP_NAMES):
-        passed = i < safe_index
-        color = "#4CAF50" if passed else "#888888"
-        icon = "✅" if passed else "⏺️"
-        key = step.lower().replace(" & ", "_").replace(" ", "_")
-        time_sec = timings.get(key, 0.0)
-        html_lines.append(
-            f'<div style="color:{color}; font-weight:600; margin-bottom:4px;">'
-            f'{icon} {step} <small style="font-weight:normal; color:#555;">({time_sec:.2f}s)</small></div>'
-        )
+        html_lines = []
+        for i, step in enumerate(STEP_NAMES):
+            passed = i < safe_index
+            color = "#4CAF50" if passed else "#888888"
+            icon = "✅" if passed else "⏺️"
+            key = step.lower().replace(" & ", "_").replace(" ", "_")
+            time_sec = timings.get(key, 0.0)
+            html_lines.append(
+                f'<div style="color:{color}; font-weight:600; margin-bottom:4px;">'
+                f'{icon} {step} <small style="font-weight:normal; color:#555;">({time_sec:.2f}s)</small></div>'
+            )
+        return "<br>".join(html_lines)
 
-    return "<br>".join(html_lines)
+    except Exception as e:
+        print(f"⚠️ render_pipeline error: {e}")
+        return "<div style='color:red;'>⚠️ Pipeline rendering failed</div>"
 
+# Return a neutral gray pipeline view for preview
 def render_pipeline_preview():
-    """
-    Return a neutral gray pipeline view for preview.
-    Used before analysis runs.
-    """
     html_lines = []
     for step in STEP_NAMES:
         html_lines.append(
