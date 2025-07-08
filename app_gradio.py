@@ -108,23 +108,25 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
 
     def postprocess(outputs):
         try:
+            print("DEBUG: Output types:")
+            for i, o in enumerate(outputs):
+                print(f" Output[{i}] type: {type(o)}")
+            
             annotated = outputs[0] or np.zeros((100, 100, 3), dtype=np.uint8)
             label = outputs[1] or "unknown"
             timings = outputs[-1] or {}
-
+    
             sanitized = []
             for o in outputs[2:-2]:
                 sanitized.append(o if o is not None else "")
-
+    
             pipeline_html = render_pipeline(timings, label)
             if not isinstance(pipeline_html, str):
                 pipeline_html = str(pipeline_html)
-
-            # Debug prints - uncomment if needed
-            # print(f"Annotated type: {type(annotated)}")
-            # print(f"Label: {label}")
-            # print(f"Pipeline HTML type: {type(pipeline_html)}")
-
+    
+            print(f"DEBUG: pipeline_html type: {type(pipeline_html)}")
+            print(f"DEBUG: pipeline_html content preview: {pipeline_html[:100]}")
+    
             return (
                 annotated,
                 label_to_badge(label),
@@ -141,6 +143,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 {},
                 "",
             )
+
 
     run_button.click(
         fn=run_analysis,
