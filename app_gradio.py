@@ -149,14 +149,14 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 else:
                     sanitized.append(str(o))
 
-            pipeline_html = render_pipeline(timings, label)
-            if not isinstance(pipeline_html, str):
-                pipeline_html = str(pipeline_html)
+            # pipeline_html = render_pipeline(timings, label)
+            # if not isinstance(pipeline_html, str):
+            #     pipeline_html = str(pipeline_html)
 
             # Debug prints
             print(f"DEBUG: Annotated type: {type(annotated)}")
             print(f"DEBUG: Label: {label}")
-            print(f"DEBUG: Pipeline HTML type: {type(pipeline_html)}")
+            # print(f"DEBUG: Pipeline HTML type: {type(pipeline_html)}")
             print(f"DEBUG: Outputs length: {len(outputs)} Expected outputs: 11")
 
             # Return outputs WITHOUT pipeline_status to avoid length mismatch error
