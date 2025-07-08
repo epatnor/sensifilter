@@ -10,14 +10,14 @@ STEP_NAMES = [
 
 def label_to_badge(label):
     """
-    Returnerar en färgad badge-HTML baserat på etiketten.
+    Return a colored badge HTML based on the label.
     """
     colors = {
-        "safe": "#4CAF50",       # grön
-        "sensitive": "#F44336",  # röd
+        "safe": "#4CAF50",       # green
+        "sensitive": "#F44336",  # red
         "review": "#FF9800",     # orange
     }
-    color = colors.get(label.lower(), "#757575")  # fallback grå
+    color = colors.get(label.lower(), "#757575")  # fallback gray
     return f"""<span style="
         background-color: {color};
         color: white;
@@ -30,12 +30,11 @@ def label_to_badge(label):
         text-align: center;
     ">{label.upper()}</span>"""
 
-
 def render_pipeline(timings, label):
     """
-    Bygger en HTML-lista som visar pipeline-stegen.
-    Gröna bockar på passerade steg, gråa ikoner annars.
-    Tider visas med två decimals noggrannhet.
+    Build an HTML list displaying the pipeline steps.
+    Green check marks for passed steps, gray circles otherwise.
+    Shows timings with two decimals.
     """
     if not timings:
         timings = {}
@@ -62,11 +61,10 @@ def render_pipeline(timings, label):
 
     return "<br>".join(html_lines)
 
-
 def render_pipeline_preview():
     """
-    Returnerar en neutral grå pipeline-visning för förhandsgranskning.
-    Används innan analys körs.
+    Return a neutral gray pipeline view for preview.
+    Used before analysis runs.
     """
     html_lines = []
     for step in STEP_NAMES:
