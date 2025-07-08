@@ -116,14 +116,18 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
     toggle_button = gr.Button("Toggle Raw Result")
 
     # Toggle-funktion för Raw Result
+    full_output = gr.JSON(label="📋 Full Raw Result", visible=False)
+    toggle_state = gr.State(False)  # håller reda på toggle-status
+    
     def toggle_raw(visible):
-        return gr.update(visible=not visible)
-
+        return gr.update(visible=not visible), not visible
+    
     toggle_button.click(
-        toggle_raw,
-        inputs=full_output,
-        outputs=full_output,
+        fn=toggle_raw,
+        inputs=[toggle_state],
+        outputs=[full_output, toggle_state],
     )
+        
 
     def postprocess(outputs):
         try:
