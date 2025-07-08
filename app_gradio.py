@@ -84,6 +84,7 @@ def run_analysis(image_path):
         timings_clean,
     )
 
+
 with gr.Blocks(title="Sensifilter Analyzer") as demo:
     gr.Markdown("🧪 **Sensifilter Analyzer (Gradio Edition)**")
 
@@ -114,6 +115,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
     full_output = gr.JSON(label="📋 Full Raw Result", visible=False)
     toggle_button = gr.Button("Toggle Raw Result")
 
+    # Toggle-funktion för Raw Result
     def toggle_raw(visible):
         return gr.update(visible=not visible)
 
