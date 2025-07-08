@@ -1,7 +1,6 @@
 # filters.py
 
-from sensifilter.constants import DEFAULT_SKIN_PERCENT_THRESHOLD, DEFAULT_SKIN_HUMAN_RATIO
-from sensifilter.utils import estimate_skin_percent
+from sensifilter.constants import DEFAULT_SKIN_HUMAN_RATIO
 from PIL import Image
 
 
@@ -14,8 +13,6 @@ def quick_filter(image_path):
     meta = {
         "width": None,
         "height": None,
-        "skin_percent": None,
-        "contains_human": None,
     }
 
     try:
@@ -29,39 +26,31 @@ def quick_filter(image_path):
     except Exception:
         return False, meta
 
-    meta["contains_human"] = True
-    meta["skin_percent"] = estimate_skin_percent(image_path)
-
-    if meta["skin_percent"] < DEFAULT_SKIN_PERCENT_THRESHOLD:
-        return False, meta
-
     return True, meta
 
 
 def apply_filters(result: dict, settings: dict = None):
     """
     Kör hela filtersystemet på ett analysresultat.
-    Returnerar etiketten (safe/sensitive) eller 'review'.
+    Returnerar etiketten (safe / sensitive / review).
     """
     if settings is None:
         settings = {}
 
-    min_skin = settings.get("min_skin_percent", 15)
     min_skin_human_ratio = settings.get("min_skin_human_ratio", DEFAULT_SKIN_HUMAN_RATIO)
     enable_scene = settings.get("enable_scene_filter", True)
     enable_keywords = settings.get("enable_keyword_filter", True)
     enable_caption = settings.get("enable_caption_filter", True)
 
-    skin_percent = result.get("skin_percent", 0)
     skin_human_ratio = result.get("max_skin_ratio", 0)
     contains_human = result.get("contains_human", False)
 
-    # Om ingen människa finns, ignorera all hudanalys
+    # Om ingen människa finns, ignorera hudanalys
     if not contains_human:
         return "safe"
 
-    # Tröskelvärden för hud (total eller inom mänsklig box)
-    if skin_percent < min_skin and skin_human_ratio < min_skin_human_ratio:
+    # Tröskel för hud inom människobox
+    if skin_human_ratio < min_skin_human_ratio:
         return "safe"
 
     # Kontrollera scenklassificering
