@@ -1,5 +1,3 @@
-# app_gradio.py
-
 import cv2
 import gradio as gr
 from sensifilter import analyze
@@ -19,13 +17,12 @@ def run_analysis(image_path):
         import numpy as np
         annotated = np.zeros((100, 100, 3), dtype=np.uint8)
 
-    # Läs caption tuple säkert
     caption_data = result.get("caption", ("", 0.0))
     if not isinstance(caption_data, (tuple, list)) or len(caption_data) < 2:
         caption_text = str(caption_data) if caption_data else ""
         blip_confidence = 0.0
     else:
-        caption_text = caption_data[0] if caption_data[0] else ""
+        caption_text = caption_data[0] or ""
         blip_confidence = caption_data[1] if isinstance(caption_data[1], (float, int)) else 0.0
 
     scene = result.get("scene", "")
@@ -62,16 +59,13 @@ def run_analysis(image_path):
         result
     )
 
-
 def label_to_badge(label):
-    # Map label to color
     colors = {
-        "safe": "#4CAF50",        # grön
-        "sensitive": "#F44336",   # röd
-        "review": "#FF9800",      # orange
+        "safe": "#4CAF50",
+        "sensitive": "#F44336",
+        "review": "#FF9800",
     }
-    color = colors.get(label.lower(), "#757575")  # grå som fallback
-    # Return a HTML span badge
+    color = colors.get(label.lower(), "#757575")
     return f"""<span style="
         background-color: {color};
         color: white;
@@ -106,13 +100,13 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
         yolo_skipped_output = gr.Checkbox(label="YOLO Skipped")
 
     full_output = gr.JSON(label="📋 Full Raw Result", visible=False)
-
-    def toggle_raw_result(visible):
-        return not visible
-
     toggle_button = gr.Button("Toggle Raw Result")
 
-    toggle_button.click(toggle_raw_result, inputs=full_output, outputs=full_output)
+    toggle_button.click(
+        lambda visible: not visible,
+        inputs=full_output,
+        outputs=full_output
+    )
 
     run_button.click(
         fn=run_analysis,
@@ -130,8 +124,8 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             full_output,
         ],
         postprocess=lambda outputs: (
-            outputs[0],  # annotated
-            label_to_badge(outputs[1]),  # label as badge
+            outputs[0],
+            label_to_badge(outputs[1]),
             *outputs[2:]
         )
     )
