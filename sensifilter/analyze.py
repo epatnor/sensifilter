@@ -19,8 +19,6 @@ ALL_SENSITIVE_KEYWORDS = KEYWORDS_NUDITY + KEYWORDS_VIOLENCE + KEYWORDS_OTHER
 
 def analyze_image(image_path, settings):
     result = {}
-
-    # Timing dict for profiling
     timings = {}
 
     # Run captioning (BLIP)
@@ -71,15 +69,16 @@ def analyze_image(image_path, settings):
         print(f"❌ Pose detection error: {e}")
     timings["pose_detection"] = time.time() - start
 
-    # Decide if YOLO should run (skip for safe scenes)
+    # Decide if YOLO should run
     run_yolo = True
     caption_lc = result["caption"][0].lower() if isinstance(result["caption"], (list, tuple)) else ""
     if "mountain" in caption_lc or "landscape" in caption_lc:
         print("🏔️ Detected safe scene in caption. Skipping YOLO.")
         run_yolo = False
 
-    # Run YOLO + skin detection if not skipped
+    # YOLO + skin detection
     start = time.time()
+    annotated_path = None
     if run_yolo:
         try:
             image_bgr = utils.load_image_bgr(image_path)
@@ -92,46 +91,48 @@ def analyze_image(image_path, settings):
             if boxes:
                 annotated_bgr = boundingbox.draw_bounding_boxes(image_bgr, boxes)
                 annotated_rgb = cv2.cvtColor(annotated_bgr, cv2.COLOR_BGR2RGB)
-
                 h, w, _ = annotated_rgb.shape
-                print(f"🖼 Annotated image size: {w}x{h}")
 
-                if max(h, w) > 8192:
-                    print("⚠️ Warning: Extremely high resolution image loaded (>8K)")
-
+                # Resize if necessary
                 max_size = 3840
                 if max(h, w) > max_size:
                     scale = max_size / max(h, w)
                     annotated_rgb = cv2.resize(annotated_rgb, (int(w * scale), int(h * scale)))
-                    print(f"🔧 Resized annotated image to: {annotated_rgb.shape[1]}x{annotated_rgb.shape[0]}")
 
-                result["annotated_image"] = Image.fromarray(annotated_rgb)
+                annotated_img = Image.fromarray(annotated_rgb)
 
-                del annotated_bgr
-                del annotated_rgb
+                # Ensure folder exists
+                os.makedirs("static/annotated", exist_ok=True)
+                base = os.path.basename(image_path)
+                stem, _ = os.path.splitext(base)
+                annotated_path = f"static/annotated/{stem}_annotated.png"
+                annotated_img.save(annotated_path)
+                result["annotated_path"] = "/" + annotated_path.replace("\\", "/")
+                print(f"💾 Annotated image saved: {annotated_path}")
             else:
                 print("⚠️ No boxes found, skipping annotation.")
-                result["annotated_image"] = None
+                result["annotated_path"] = None
+                result["max_skin_ratio"] = 0.0
+                result["skin_human_boxes"] = []
 
             del image_bgr
-
         except Exception as e:
             print(f"❌ YOLO/skin detection error: {e}")
+            result["annotated_path"] = None
             result["skin_human_boxes"] = []
             result["max_skin_ratio"] = 0.0
-            result["annotated_image"] = None
     else:
+        result["annotated_path"] = None
         result["skin_human_boxes"] = []
         result["max_skin_ratio"] = 0.0
-        result["annotated_image"] = None
     timings["yolo_skin_detection"] = time.time() - start
 
-    # Store flags
+    # Final metadata
     result["yolo_skipped"] = not run_yolo
     result["blip_confidence"] = result["caption"][1] if isinstance(result["caption"], (list, tuple)) else 0.0
     result["timings"] = timings
 
-    # Apply final filter classification
+    # Final label
     try:
         result["label"] = filters.apply_filters(result, settings)
         print(f"🏷️ Final label: {result['label']}")
