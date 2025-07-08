@@ -4,23 +4,40 @@ import gradio as gr
 from sensifilter import analyze
 from pipelineview import label_to_badge, render_pipeline, render_pipeline_preview
 
-# Defaultinställningar för analysen
+# Default inställningar för analys
 DEFAULT_SETTINGS = {
     "enable_scene_filter": True,
     "enable_caption_filter": True,
     "enable_keyword_filter": True,
 }
 
+# Statisk mockup för test/visning i UI
+def render_pipeline_mockup():
+    steps = [
+        ("Captioning", 0.12, True),
+        ("Keyword Matching", 0.08, True),
+        ("Scene Classification", 0.15, False),
+        ("Pose Detection", 0.07, False),
+        ("YOLO & Skin Detection", 0.22, False),
+    ]
+    html_lines = []
+    for step, time_sec, passed in steps:
+        color = "#4CAF50" if passed else "#888888"
+        icon = "✅" if passed else "⏺️"
+        html_lines.append(
+            f'<div style="color:{color}; font-weight:600; margin-bottom:4px;">'
+            f'{icon} {step} <small style="font-weight:normal; color:#555;">({time_sec:.2f}s)</small></div>'
+        )
+    return "<br>".join(html_lines)
+
 def run_analysis(image_path):
     print(f"📷 Received image: {image_path}")
     result = analyze.analyze_image(image_path, DEFAULT_SETTINGS)
 
-    # Hämta annoterad bild, fallback till tom svart bild om inget finns
     annotated = result.get("annotated_image")
     if annotated is None:
         annotated = np.zeros((100, 100, 3), dtype=np.uint8)
 
-    # Hämta caption och confidence säkert
     caption_data = result.get("caption", ("", 0.0))
     if not isinstance(caption_data, (tuple, list)) or len(caption_data) < 2:
         caption_text = str(caption_data) if caption_data else ""
@@ -29,14 +46,12 @@ def run_analysis(image_path):
         caption_text = caption_data[0] or ""
         blip_confidence = caption_data[1] if isinstance(caption_data[1], (float, int)) else 0.0
 
-    # Övriga resultat
     scene = result.get("scene", "")
     pose = result.get("pose", "")
     contains_human = result.get("contains_human", False)
     label = result.get("label", "")
     yolo_skipped = result.get("yolo_skipped", False)
 
-    # Beräkna total hudprocent från YOLO-boxar
     try:
         boxes = result.get("skin_human_boxes", [])
         total_pixels = 0
@@ -52,7 +67,6 @@ def run_analysis(image_path):
     except Exception:
         skin_percent = 0.0
 
-    # Ta hand om timings, säkerställa rätt datatyper
     timings = result.get("timings", {})
     timings_clean = {str(k): float(v) if isinstance(v, (float, int)) else 0.0 for k, v in timings.items()}
 
@@ -81,8 +95,11 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
         with gr.Column():
             image_annotated = gr.Image(label="🎯 Annotated", type="numpy")
 
+        # Här visar vi både pipeline-status från analys + statisk mockup-lista bredvid
         with gr.Column(scale=1):
             pipeline_status = gr.HTML(label="Pipeline Progress", value=render_pipeline_preview())
+            gr.Markdown("### Static Mockup Pipeline")
+            pipeline_mockup = gr.HTML(label="Pipeline Mockup", value=render_pipeline_mockup())
 
     with gr.Row():
         label_output = gr.HTML(label="Label")
@@ -97,7 +114,6 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
     full_output = gr.JSON(label="📋 Full Raw Result", visible=False)
     toggle_button = gr.Button("Toggle Raw Result")
 
-    # Toggle för raw JSON visning
     def toggle_raw(visible):
         return gr.update(visible=not visible)
 
@@ -109,17 +125,15 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
 
     def postprocess(outputs):
         try:
-            # Säkerställ att annoterad bild är numpy-array
             annotated = outputs[0]
             if annotated is None:
                 annotated = np.zeros((100, 100, 3), dtype=np.uint8)
-            elif hasattr(annotated, 'convert'):  # PIL Image till numpy-array
+            elif hasattr(annotated, 'convert'):  # PIL Image -> numpy
                 annotated = np.array(annotated)
 
             label = outputs[1] or "unknown"
             timings = outputs[-1] or {}
 
-            # Sanera övriga outputs från None
             sanitized = []
             for o in outputs[2:-2]:
                 sanitized.append(o if o is not None else "")
@@ -127,9 +141,6 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             pipeline_html = render_pipeline(timings, label)
             if not isinstance(pipeline_html, str):
                 pipeline_html = str(pipeline_html)
-
-            print(f"DEBUG: pipeline_html type: {type(pipeline_html)}")
-            print(f"DEBUG: pipeline_html preview: {pipeline_html[:100]}")
 
             return (
                 annotated,
@@ -140,7 +151,6 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             )
         except Exception as e:
             print(f"❌ Postprocess error: {e}")
-            # Returnera fallbackvärden vid fel
             return (
                 np.zeros((100, 100, 3), dtype=np.uint8),
                 label_to_badge("error"),
