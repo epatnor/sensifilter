@@ -69,14 +69,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Klick på dummy-rutan öppnar filväljaren (med debounce)
-  uploadBox.addEventListener("click", () => {
-    if (clickLocked) return;
-    clickLocked = true;
-    imageInput.click();
-    setTimeout(() => { clickLocked = false; }, 500);
-  });
-
   // Kör analys och uppdatera UI
   analyzeBtn.addEventListener("click", async () => {
     const file = imageInput.files[0];
