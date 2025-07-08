@@ -79,10 +79,10 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
         with gr.Column():
             image_annotated = gr.Image(label="🎯 Annotated", type="numpy")
         with gr.Column(scale=1):
-            pipeline_status = gr.HTML(value=render_pipeline_preview(), show_label=False)
+            pipeline_status = gr.HTML(label="Pipeline Progress", value=render_pipeline_preview())
 
     with gr.Row():
-        label_output = gr.HTML(label="Label")
+        label_output = gr.HTML(show_label=False)  # Changed to HTML safely
         caption_output = gr.Textbox(label="Caption")
         scene_output = gr.Textbox(label="Scene")
         skin_output = gr.Number(label="Skin %")
@@ -95,6 +95,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
     toggle_button = gr.Button("Toggle Raw Result")
     toggle_state = gr.State(False)
 
+    # Toggle JSON visibility
     def toggle_raw(visible):
         return gr.update(visible=not visible), not visible
 
@@ -104,11 +105,12 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
         outputs=[full_output, toggle_state],
     )
 
+    # Handle output processing and HTML rendering
     def postprocess(outputs):
         try:
             if not isinstance(outputs, (list, tuple)) or len(outputs) < 11:
                 raise ValueError("Invalid number of outputs returned")
-    
+
             annotated = outputs[0] if isinstance(outputs[0], np.ndarray) else np.zeros((100, 100, 3), dtype=np.uint8)
             label = outputs[1] or "unknown"
             caption = outputs[2]
@@ -120,7 +122,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             yolo_skipped = outputs[8]
             full_result = outputs[9] if isinstance(outputs[9], dict) else {}
             timings = outputs[10] if isinstance(outputs[10], dict) else {}
-    
+
             try:
                 pipeline_html = render_pipeline(timings, label)
                 if not isinstance(pipeline_html, str):
@@ -128,10 +130,16 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             except Exception as e:
                 print(f"⚠️ render_pipeline failure: {e}")
                 pipeline_html = render_pipeline_preview()
-    
+
+            label_html = label_to_badge(label)
+            if not isinstance(label_html, str):
+                label_html = str(label_html)
+
+            print("✅ Label HTML:", repr(label_html))
+
             return (
                 annotated,
-                label_to_badge(label),
+                label_html,
                 caption,
                 scene,
                 skin,
@@ -142,7 +150,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 full_result,
                 pipeline_html,
             )
-    
+
         except Exception as e:
             print(f"❌ Postprocess total failure: {e}")
             return (
@@ -153,6 +161,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 render_pipeline_preview(),
             )
 
+    # Bind button click
     run_button.click(
         fn=run_analysis,
         inputs=[image_input],
