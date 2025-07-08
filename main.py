@@ -10,6 +10,13 @@ from sensifilter.analyze import analyze_image
 
 app = FastAPI()
 
+DEFAULT_SETTINGS = {
+    "enable_scene_filter": True,
+    "enable_caption_filter": True,
+    "enable_keyword_filter": True,
+}
+
+
 # Serve static files (e.g. index.html)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
