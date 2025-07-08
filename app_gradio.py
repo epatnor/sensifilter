@@ -129,8 +129,15 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             timings = outputs[10] if isinstance(outputs[10], dict) else {}
     
             # Render pipeline HTML safely
-            pipeline_html = render_pipeline(timings, label)
-    
+            try:
+                pipeline_html = render_pipeline(timings, label)
+                if not isinstance(pipeline_html, str):
+                    raise TypeError("pipeline_html is not a string")
+            except Exception as e:
+                print(f"⚠️ render_pipeline failure: {e}")
+                pipeline_html = render_pipeline_preview()
+            
+                
             return (
                 annotated,
                 label_to_badge(label),
