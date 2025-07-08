@@ -133,10 +133,10 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             elif not isinstance(annotated, np.ndarray):
                 print(f"WARNING: annotated image is of unexpected type: {type(annotated)}. Using fallback.")
                 annotated = np.zeros((100, 100, 3), dtype=np.uint8)
-
+    
             label = outputs[1] or "unknown"
             timings = outputs[-1] or {}
-
+    
             sanitized = []
             for o in outputs[2:-2]:
                 if o is None:
@@ -145,14 +145,11 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                     sanitized.append(o)
                 else:
                     sanitized.append(str(o))
-
-            # pipeline_status removed from outputs to match UI component count
-
-            # Debug prints
+    
             print(f"DEBUG: Annotated type: {type(annotated)}")
             print(f"DEBUG: Label: {label}")
             print(f"DEBUG: Outputs length: {len(outputs)} Expected outputs: 10")
-
+    
             return (
                 annotated,
                 label_to_badge(label),
@@ -167,8 +164,8 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 *[""] * (len(outputs) - 4),
                 {},
             )
-
-
+    
+    
     run_button.click(
         fn=run_analysis,
         inputs=[image_input],
@@ -183,7 +180,6 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             blip_conf_output,
             yolo_skipped_output,
             full_output,
-            # pipeline_status output removed here
         ],
         postprocess=postprocess,
     )
