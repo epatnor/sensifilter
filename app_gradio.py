@@ -1,12 +1,10 @@
-# app_gradio.py
-
 import cv2
 import numpy as np
 import gradio as gr
 from sensifilter import analyze
 from pipelineview import label_to_badge, render_pipeline, render_pipeline_preview
 
-# Default inställningar för analys
+# Defaultinställningar för analysen
 DEFAULT_SETTINGS = {
     "enable_scene_filter": True,
     "enable_caption_filter": True,
@@ -17,10 +15,12 @@ def run_analysis(image_path):
     print(f"📷 Received image: {image_path}")
     result = analyze.analyze_image(image_path, DEFAULT_SETTINGS)
 
+    # Hämta annoterad bild, fallback till tom svart bild om inget finns
     annotated = result.get("annotated_image")
     if annotated is None:
         annotated = np.zeros((100, 100, 3), dtype=np.uint8)
 
+    # Hämta caption och confidence säkert
     caption_data = result.get("caption", ("", 0.0))
     if not isinstance(caption_data, (tuple, list)) or len(caption_data) < 2:
         caption_text = str(caption_data) if caption_data else ""
@@ -29,12 +29,14 @@ def run_analysis(image_path):
         caption_text = caption_data[0] or ""
         blip_confidence = caption_data[1] if isinstance(caption_data[1], (float, int)) else 0.0
 
+    # Övriga resultat
     scene = result.get("scene", "")
     pose = result.get("pose", "")
     contains_human = result.get("contains_human", False)
     label = result.get("label", "")
     yolo_skipped = result.get("yolo_skipped", False)
 
+    # Beräkna total hudprocent från YOLO-boxar
     try:
         boxes = result.get("skin_human_boxes", [])
         total_pixels = 0
@@ -50,6 +52,7 @@ def run_analysis(image_path):
     except Exception:
         skin_percent = 0.0
 
+    # Ta hand om timings, säkerställa rätt datatyper
     timings = result.get("timings", {})
     timings_clean = {str(k): float(v) if isinstance(v, (float, int)) else 0.0 for k, v in timings.items()}
 
@@ -66,7 +69,6 @@ def run_analysis(image_path):
         result,
         timings_clean,
     )
-
 
 with gr.Blocks(title="Sensifilter Analyzer") as demo:
     gr.Markdown("🧪 **Sensifilter Analyzer (Gradio Edition)**")
@@ -95,7 +97,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
     full_output = gr.JSON(label="📋 Full Raw Result", visible=False)
     toggle_button = gr.Button("Toggle Raw Result")
 
-    # Toggle-funktion för Raw Result
+    # Toggle för raw JSON visning
     def toggle_raw(visible):
         return gr.update(visible=not visible)
 
@@ -107,15 +109,17 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
 
     def postprocess(outputs):
         try:
+            # Säkerställ att annoterad bild är numpy-array
             annotated = outputs[0]
             if annotated is None:
                 annotated = np.zeros((100, 100, 3), dtype=np.uint8)
-            elif hasattr(annotated, 'convert'):  # PIL Image -> numpy
+            elif hasattr(annotated, 'convert'):  # PIL Image till numpy-array
                 annotated = np.array(annotated)
 
             label = outputs[1] or "unknown"
             timings = outputs[-1] or {}
 
+            # Sanera övriga outputs från None
             sanitized = []
             for o in outputs[2:-2]:
                 sanitized.append(o if o is not None else "")
@@ -136,6 +140,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             )
         except Exception as e:
             print(f"❌ Postprocess error: {e}")
+            # Returnera fallbackvärden vid fel
             return (
                 np.zeros((100, 100, 3), dtype=np.uint8),
                 label_to_badge("error"),
