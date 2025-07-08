@@ -5,7 +5,6 @@ import cv2
 import numpy as np
 from PIL import Image
 import io
-import base64
 
 print("📦 analyze.py loaded from:", __file__)
 print("🔧 cv2 available:", cv2.__version__)
@@ -31,7 +30,7 @@ def analyze_image(image_path, settings):
     except Exception as e:
         result["skin_percent"] = f"Error: {e}"
 
-    # Caption
+    # Caption generation
     if settings.get("enable_caption_filter", True):
         try:
             caption_text, confidence = caption.generate_caption(image_path)
@@ -60,15 +59,16 @@ def analyze_image(image_path, settings):
         image_bgr = utils.load_image_bgr(image_path)
         boxes = boundingbox.detect_skin_ratio(image_bgr)
         print("🔎 Detected boxes:", boxes)
-    
+
         result["skin_human_boxes"] = boxes
         result["max_skin_ratio"] = max((b["skin_ratio"] for b in boxes), default=0)
-    
+
         if boxes:
+            # Annotera bild med bounding boxes
             annotated_bgr = boundingbox.draw_bounding_boxes(image_bgr, boxes)
+
+            # Konvertera till RGB och ev. skala ner
             annotated_rgb = cv2.cvtColor(annotated_bgr, cv2.COLOR_BGR2RGB)
-    
-            # Begränsa storlek
             h, w, _ = annotated_rgb.shape
             print(f"🖼 Annotated image size: {w}x{h}")
             max_size = 1280
@@ -76,29 +76,28 @@ def analyze_image(image_path, settings):
                 scale = max_size / max(h, w)
                 annotated_rgb = cv2.resize(annotated_rgb, (int(w * scale), int(h * scale)))
                 print(f"🔧 Resized annotated image to: {annotated_rgb.shape[1]}x{annotated_rgb.shape[0]}")
-    
-            # Komprimera via Pillow till JPEG och läs tillbaka som NumPy-array
-            pil_image = Image.fromarray(annotated_rgb)
-            with io.BytesIO() as buffer:
-                pil_image.save(buffer, format="JPEG", quality=85)
-                compressed = buffer.getvalue()
-                pil_reloaded = Image.open(io.BytesIO(compressed)).convert("RGB")
-                result["annotated_image"] = np.array(pil_reloaded)
-    
+
+            # Konvertera till PIL för Gradio
+            result["annotated_image"] = Image.fromarray(annotated_rgb)
+
+            # Frigör minne från tunga arrays
+            del annotated_bgr
+            del annotated_rgb
+
         else:
             print("⚠️ No boxes found, skipping annotation.")
             result["annotated_image"] = None
-    
-        result["original_image_rgb"] = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
-    
+
+        # Rensa originalbild – vi använder den inte i UI
+        del image_bgr
+
     except Exception as e:
         print(f"❌ Error in YOLO/skin analysis: {e}")
         result["skin_human_boxes"] = []
         result["max_skin_ratio"] = 0.0
         result["annotated_image"] = None
-        result["original_image_rgb"] = None
 
-
+    # Samlad filterklassificering
     try:
         result["label"] = filters.apply_filters(result, settings)
     except Exception as e:
