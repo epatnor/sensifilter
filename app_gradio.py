@@ -80,8 +80,6 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             image_annotated = gr.Image(label="🎯 Annotated", type="numpy")
         with gr.Column(scale=1):
             pipeline_status = gr.HTML(label="Pipeline Progress", value=render_pipeline_preview())
-            gr.Markdown("### Static Mockup Pipeline")
-            pipeline_mockup = gr.HTML(label="Pipeline Mockup", value=render_pipeline_mockup())
 
     with gr.Row():
         label_output = gr.HTML(label="Label")
