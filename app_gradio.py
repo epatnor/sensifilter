@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 import gradio as gr
 from sensifilter import analyze
 
@@ -22,7 +23,6 @@ def run_analysis(image_path):
 
     annotated = result.get("annotated_image")
     if annotated is None:
-        import numpy as np
         annotated = np.zeros((100, 100, 3), dtype=np.uint8)
 
     caption_data = result.get("caption", ("", 0.0))
@@ -54,7 +54,6 @@ def run_analysis(image_path):
     except:
         skin_percent = 0.0
 
-    # Clean timings dict for safe HTML rendering
     timings = result.get("timings", {})
     timings_clean = {str(k): float(v) if isinstance(v, (float, int)) else 0.0 for k, v in timings.items()}
 
@@ -94,6 +93,8 @@ def label_to_badge(label):
 
 
 def render_pipeline(timings, label):
+    if not timings:
+        timings = {}
     label_lc = label.lower()
     if label_lc == "safe":
         safe_index = len(STEP_NAMES)
@@ -150,16 +151,32 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
     )
 
     def postprocess(outputs):
-        annotated = outputs[0]
-        label = outputs[1]
-        timings = outputs[-1]
-        return (
-            annotated,
-            label_to_badge(label),
-            *outputs[2:-2],
-            outputs[-2],  # full raw result JSON
-            render_pipeline(timings, label),
-        )
+        try:
+            annotated = outputs[0] or np.zeros((100, 100, 3), dtype=np.uint8)
+            label = outputs[1] or "unknown"
+            timings = outputs[-1] or {}
+
+            # Sanitize outputs for none or empty
+            sanitized = []
+            for o in outputs[2:-2]:
+                sanitized.append(o if o is not None else "")
+
+            return (
+                annotated,
+                label_to_badge(label),
+                *sanitized,
+                outputs[-2] or {},
+                render_pipeline(timings, label),
+            )
+        except Exception as e:
+            print(f"❌ Postprocess error: {e}")
+            return (
+                np.zeros((100, 100, 3), dtype=np.uint8),
+                label_to_badge("error"),
+                *[""] * (len(outputs) - 4),
+                {},
+                "",
+            )
 
     run_button.click(
         fn=run_analysis,
