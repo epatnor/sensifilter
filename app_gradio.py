@@ -4,14 +4,14 @@ import gradio as gr
 from sensifilter import analyze
 from pipelineview import label_to_badge, render_pipeline, render_pipeline_preview
 
-# Default inställningar för analys
+# Default settings for analysis
 DEFAULT_SETTINGS = {
     "enable_scene_filter": True,
     "enable_caption_filter": True,
     "enable_keyword_filter": True,
 }
 
-# Statisk mockup för test/visning i UI
+# Static pipeline mockup for UI preview/testing
 def render_pipeline_mockup():
     steps = [
         ("Captioning", 0.12, True),
@@ -96,7 +96,6 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
         with gr.Column():
             image_annotated = gr.Image(label="🎯 Annotated", type="numpy")
 
-        # Här visar vi både pipeline-status från analys + statisk mockup-lista bredvid
         with gr.Column(scale=1):
             pipeline_status = gr.HTML(label="Pipeline Progress", value=render_pipeline_preview())
             gr.Markdown("### Static Mockup Pipeline")
@@ -114,40 +113,31 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
 
     full_output = gr.JSON(label="📋 Full Raw Result", visible=False)
     toggle_button = gr.Button("Toggle Raw Result")
+    toggle_state = gr.State(False)  # Track visibility state
 
-    # Toggle-funktion för Raw Result
-    full_output = gr.JSON(label="📋 Full Raw Result", visible=False)
-    toggle_state = gr.State(False)  # håller reda på toggle-status
-    
-    def toggle_raw(visible):
-        return gr.update(visible=not visible), not visible
-    
+    def toggle_raw(state):
+        new_state = not state
+        return gr.update(visible=new_state), new_state
+
     toggle_button.click(
         fn=toggle_raw,
         inputs=[toggle_state],
         outputs=[full_output, toggle_state],
     )
-        
 
     def postprocess(outputs):
         try:
-            # Bild fallback - se till att alltid vara numpy-array
             annotated = outputs[0]
             if annotated is None:
                 annotated = np.zeros((100, 100, 3), dtype=np.uint8)
-            elif hasattr(annotated, 'convert'):  # PIL Image -> numpy
+            elif hasattr(annotated, 'convert'):  # Convert PIL Image to numpy
                 annotated = np.array(annotated)
             elif not isinstance(annotated, np.ndarray):
-                print(f"WARNING: annotated image is of unexpected type: {type(annotated)}. Using fallback.")
                 annotated = np.zeros((100, 100, 3), dtype=np.uint8)
-    
-            # Label fallback
+
             label = outputs[1] or "unknown"
-    
-            # Timing fallback
             timings = outputs[-1] or {}
-    
-            # Sanitize other outputs
+
             sanitized = []
             for o in outputs[2:-2]:
                 if o is None:
@@ -156,29 +146,20 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                     sanitized.append(o)
                 else:
                     sanitized.append(str(o))
-    
-            # Render pipeline html and enforce str type
+
             pipeline_html = render_pipeline(timings, label)
             if not isinstance(pipeline_html, str):
                 pipeline_html = str(pipeline_html)
-    
-            # Sanity debug prints
-            print(f"DEBUG: Annotated type: {type(annotated)}")
-            print(f"DEBUG: Label: {label}")
-            print(f"DEBUG: Pipeline HTML type: {type(pipeline_html)}")
-            print(f"DEBUG: Outputs length: {len(outputs)} Expected outputs: 11")
-    
-            # Return all outputs, ensure last two are dict and str
+
             return (
                 annotated,
                 label_to_badge(label),
                 *sanitized,
                 outputs[-2] if isinstance(outputs[-2], dict) else {},
-                pipeline_html,
+                #pipeline_html,  # COMMENTED OUT for test
             )
         except Exception as e:
             print(f"❌ Postprocess error: {e}")
-            # Return safe fallback for all outputs
             return (
                 np.zeros((100, 100, 3), dtype=np.uint8),
                 label_to_badge("error"),
@@ -202,10 +183,11 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             blip_conf_output,
             yolo_skipped_output,
             full_output,
-            pipeline_status,
+            #pipeline_status,  # COMMENTED OUT for test
         ],
         postprocess=postprocess,
     )
+
 
 if __name__ == "__main__":
     print("✅ Environment ready. Launching UI...")
