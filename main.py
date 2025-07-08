@@ -6,28 +6,26 @@ from fastapi.staticfiles import StaticFiles
 import uvicorn
 import os
 import tempfile
-import base64
-from io import BytesIO
 from sensifilter.analyze import analyze_image
-from PIL import Image
 
 app = FastAPI()
 
+# Default pipeline settings
 DEFAULT_SETTINGS = {
     "enable_scene_filter": True,
     "enable_caption_filter": True,
     "enable_keyword_filter": True,
 }
 
-# Serve static files (e.g. index.html)
+# Serve static frontend
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Serve the index.html as the root
+# Serve the frontend page at root
 @app.get("/")
 async def root():
     return FileResponse("static/index.html")
 
-# Image analysis endpoint
+# Endpoint for image analysis
 @app.post("/analyze")
 async def analyze_endpoint(file: UploadFile = File(...)):
     try:
@@ -36,20 +34,17 @@ async def analyze_endpoint(file: UploadFile = File(...)):
             tmp.write(await file.read())
             tmp_path = tmp.name
 
-        # ✅ Run analysis with settings
         result = analyze_image(tmp_path, DEFAULT_SETTINGS)
         os.remove(tmp_path)
 
-        # 🧠 Convert annotated image to base64
-        annotated = result.pop("annotated_image", None)
-        if isinstance(annotated, Image.Image):
-            buffer = BytesIO()
-            annotated.save(buffer, format="PNG")
-            buffer.seek(0)
-            encoded = base64.b64encode(buffer.read()).decode("utf-8")
-            result["annotated_base64"] = encoded
+        # Remove unserializable items
+        result.pop("annotated_image", None)
 
         return JSONResponse(content=result)
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
+
+# Run dev server
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
