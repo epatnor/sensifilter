@@ -1,84 +1,113 @@
 /* static/styles.css */
 
 body {
-  font-family: sans-serif;
-  background: #222;
-  color: #eee;
-  padding: 20px;
-  max-width: 800px;
-  margin: auto;
+  font-family: system-ui, sans-serif;
+  background-color: #181818;
+  color: #e0e0e0;
+  margin: 30px;
 }
 
 h1 {
   color: #00d18c;
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-input[type="file"],
-button {
+img {
+  max-width: 100%;
+  max-height: 320px;
   display: block;
-  margin: 10px 0;
-}
-
-.preview {
-  max-width: 400px;
-  margin: 10px 0;
-}
-
-.section {
-  background: #2a2a2a;
-  padding: 12px;
-  margin: 16px 0;
+  margin-bottom: 16px;
   border-radius: 6px;
 }
 
-.badge {
-  display: inline-block;
-  padding: 4px 8px;
-  margin: 10px 0;
-  font-weight: bold;
-  border-radius: 4px;
+input[type="file"] {
+  margin-bottom: 10px;
 }
 
-.badge.safe {
-  background: #0c4;
+button {
+  background-color: #00d18c;
+  border: none;
+  padding: 8px 14px;
+  font-weight: bold;
   color: #000;
-}
-
-.badge.unsafe {
-  background: #c00;
-  color: #fff;
-}
-
-.timing-section summary {
   cursor: pointer;
-  font-weight: bold;
-  margin-top: 10px;
+  border-radius: 4px;
+  margin-bottom: 20px;
 }
 
-.table {
-  margin-top: 10px;
-  border-collapse: collapse;
-  width: 100%;
+button:hover {
+  background-color: #00c07a;
 }
 
-.table-row {
-  display: grid;
-  grid-template-columns: 1fr 1.5fr 2fr 0.7fr;
-  padding: 6px 4px;
-  border-bottom: 1px solid #444;
+.summary {
+  background-color: #2a2a2a;
+  padding: 14px 18px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+  line-height: 1.6;
 }
 
-.table-row.header {
-  font-weight: bold;
-  background: #333;
+.summary.safe {
+  border-left: 5px solid #00d18c;
 }
 
-.table-row.placeholder {
-  color: #888;
+.summary.flagged {
+  border-left: 5px solid #ff4444;
+}
+
+#result {
+  margin-top: 20px;
 }
 
 .error {
-  color: #f66;
-  margin-top: 10px;
+  color: #ff6b6b;
   font-weight: bold;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #222;
+  border: 1px solid #333;
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 0.9rem;
+}
+
+th, td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #333;
+}
+
+th {
+  background-color: #2a2a2a;
+  color: #00d18c;
+  font-weight: 600;
+}
+
+td {
+  color: #ddd;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tr.pending td {
+  color: #666;
+}
+
+tr.processing td {
+  color: #aaa;
+  font-style: italic;
+}
+
+tr.error td {
+  color: #ff6b6b;
 }
