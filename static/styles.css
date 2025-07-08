@@ -25,22 +25,31 @@ img {
 }
 
 input[type="file"] {
-  margin-bottom: 10px;
+  display: none;
 }
 
 button {
   background-color: #00d18c;
   border: none;
-  padding: 8px 14px;
+  padding: 14px 24px;
   font-weight: bold;
   color: #000;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
   margin-bottom: 20px;
+  font-size: 1.15rem;
+  width: 100%;
+  max-width: 400px;
+  transition: background-color 0.3s ease;
 }
 
-button:hover {
+button:hover:not(:disabled) {
   background-color: #00c07a;
+}
+
+button:disabled {
+  background-color: #555;
+  cursor: not-allowed;
 }
 
 .summary {
@@ -110,4 +119,53 @@ tr.processing td {
 
 tr.error td {
   color: #ff6b6b;
+}
+
+/* Upload box styling */
+#uploadBox {
+  border: 2px dashed #555;
+  border-radius: 8px;
+  padding: 50px;
+  text-align: center;
+  color: #888;
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 20px;
+  font-size: 1.1rem;
+  transition: border-color 0.3s, color 0.3s;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+#uploadBox:hover {
+  border-color: #00d18c;
+  color: #00d18c;
+}
+
+#uploadBox:focus {
+  outline: none;
+  border-color: #00ffb8;
+  color: #00ffb8;
+}
+
+#uploadBox .icon {
+  font-size: 3rem;
+}
+
+/* Preview image adjustments */
+#preview {
+  max-width: 400px;
+  max-height: 320px;
+  margin: 0 auto 1rem auto;
+  display: none;
+  border-radius: 6px;
+  box-shadow: 0 0 10px #00d18c88;
+  object-fit: contain;
+  transition: opacity 0.3s ease;
 }
