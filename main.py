@@ -6,7 +6,10 @@ from fastapi.staticfiles import StaticFiles
 import uvicorn
 import os
 import tempfile
+import base64
+from io import BytesIO
 from sensifilter.analyze import analyze_image
+from PIL import Image
 
 app = FastAPI()
 
@@ -33,9 +36,18 @@ async def analyze_endpoint(file: UploadFile = File(...)):
             tmp.write(await file.read())
             tmp_path = tmp.name
 
-        # ✅ Pass in settings!
+        # ✅ Run analysis with settings
         result = analyze_image(tmp_path, DEFAULT_SETTINGS)
         os.remove(tmp_path)
+
+        # 🧠 Convert annotated image to base64
+        annotated = result.pop("annotated_image", None)
+        if isinstance(annotated, Image.Image):
+            buffer = BytesIO()
+            annotated.save(buffer, format="PNG")
+            buffer.seek(0)
+            encoded = base64.b64encode(buffer.read()).decode("utf-8")
+            result["annotated_base64"] = encoded
 
         return JSONResponse(content=result)
 
