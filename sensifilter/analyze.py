@@ -1,3 +1,8 @@
+# analyze.py
+# Core image analysis pipeline combining BLIP captioning, keyword matching,
+# scene classification, pose detection, YOLO skin detection, and final filtering.
+# Includes step timing and detailed logging for debugging and performance profiling.
+
 import os
 import cv2
 import numpy as np
@@ -15,9 +20,10 @@ ALL_SENSITIVE_KEYWORDS = KEYWORDS_NUDITY + KEYWORDS_VIOLENCE + KEYWORDS_OTHER
 def analyze_image(image_path, settings):
     result = {}
 
-    # === Optional: timing dictionary for step durations ===
+    # Timing dict for profiling
     timings = {}
 
+    # Run captioning (BLIP)
     start = time.time()
     try:
         caption_text, confidence = caption.generate_caption(image_path)
@@ -25,39 +31,54 @@ def analyze_image(image_path, settings):
         print(f"📝 Caption: {caption_text} ({confidence:.2f})")
     except Exception as e:
         result["caption"] = (f"Error: {e}", 0.0)
+        print(f"❌ Caption error: {e}")
     timings["caption"] = time.time() - start
 
+    # Run keyword matching
     start = time.time()
     if settings.get("enable_keyword_filter", True):
         try:
-            result["keywords"] = keywords.match_keywords(result["caption"][0], ALL_SENSITIVE_KEYWORDS)
+            keywords_matched = keywords.match_keywords(result["caption"][0], ALL_SENSITIVE_KEYWORDS)
+            result["keywords"] = keywords_matched
+            print(f"🔍 Keywords matched: {keywords_matched}")
         except Exception as e:
             result["keywords"] = [f"Error: {e}"]
+            print(f"❌ Keyword matching error: {e}")
     timings["keyword_matching"] = time.time() - start
 
+    # Run scene classification
     start = time.time()
     if settings.get("enable_scene_filter", True):
         try:
-            result["scene"] = scene.classify_scene(image_path)
+            scene_label = scene.classify_scene(image_path)
+            result["scene"] = scene_label
+            print(f"🏷️ Scene classified: {scene_label}")
         except Exception as e:
             result["scene"] = f"Error: {e}"
+            print(f"❌ Scene classification error: {e}")
     timings["scene_classification"] = time.time() - start
 
+    # Run pose detection
     start = time.time()
     try:
-        result["contains_human"] = pose.contains_human_pose(image_path)
-        result["pose"] = "Yes" if result["contains_human"] else "No"
+        contains_human = pose.contains_human_pose(image_path)
+        result["contains_human"] = contains_human
+        result["pose"] = "Yes" if contains_human else "No"
+        print(f"🕺 Pose detection: {'Yes' if contains_human else 'No'}")
     except Exception as e:
         result["pose"] = f"Error: {e}"
         result["contains_human"] = False
+        print(f"❌ Pose detection error: {e}")
     timings["pose_detection"] = time.time() - start
 
+    # Decide if YOLO should run (skip for safe scenes)
     run_yolo = True
     caption_lc = result["caption"][0].lower() if isinstance(result["caption"], (list, tuple)) else ""
     if "mountain" in caption_lc or "landscape" in caption_lc:
         print("🏔️ Detected safe scene in caption. Skipping YOLO.")
         run_yolo = False
 
+    # Run YOLO + skin detection if not skipped
     start = time.time()
     if run_yolo:
         try:
@@ -88,7 +109,6 @@ def analyze_image(image_path, settings):
 
                 del annotated_bgr
                 del annotated_rgb
-
             else:
                 print("⚠️ No boxes found, skipping annotation.")
                 result["annotated_image"] = None
@@ -96,7 +116,7 @@ def analyze_image(image_path, settings):
             del image_bgr
 
         except Exception as e:
-            print(f"❌ Error in YOLO/skin analysis: {e}")
+            print(f"❌ YOLO/skin detection error: {e}")
             result["skin_human_boxes"] = []
             result["max_skin_ratio"] = 0.0
             result["annotated_image"] = None
@@ -106,13 +126,17 @@ def analyze_image(image_path, settings):
         result["annotated_image"] = None
     timings["yolo_skin_detection"] = time.time() - start
 
+    # Store flags
     result["yolo_skipped"] = not run_yolo
     result["blip_confidence"] = result["caption"][1] if isinstance(result["caption"], (list, tuple)) else 0.0
     result["timings"] = timings
 
+    # Apply final filter classification
     try:
         result["label"] = filters.apply_filters(result, settings)
+        print(f"🏷️ Final label: {result['label']}")
     except Exception as e:
         result["label"] = f"Error: {e}"
+        print(f"❌ Filter application error: {e}")
 
     return result
