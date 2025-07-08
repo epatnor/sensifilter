@@ -4,21 +4,18 @@ import cv2
 import gradio as gr
 from sensifilter import analyze
 
-# === Global settings ===
 DEFAULT_SETTINGS = {
     "enable_scene_filter": True,
     "enable_caption_filter": True,
     "enable_keyword_filter": True,
 }
 
-# === Main analysis function ===
 def run_analysis(image_path):
     print(f"📷 Received image: {image_path}")
     result = analyze.analyze_image(image_path, DEFAULT_SETTINGS)
 
     annotated = result.get("annotated_image")
 
-    # Extract results
     caption_text = result.get("caption", [""])[0]
     scene = result.get("scene", "")
     pose = result.get("pose", "")
@@ -27,7 +24,6 @@ def run_analysis(image_path):
     blip_confidence = result.get("blip_confidence", 0.0)
     yolo_skipped = result.get("yolo_skipped", False)
 
-    # Calculate total skin % from all boxes
     try:
         boxes = result.get("skin_human_boxes", [])
         total_pixels = 0
@@ -56,7 +52,27 @@ def run_analysis(image_path):
         result
     )
 
-# === UI setup ===
+def label_to_badge(label):
+    # Map label to color
+    colors = {
+        "safe": "#4CAF50",        # grön
+        "sensitive": "#F44336",   # röd
+        "review": "#FF9800",      # orange
+    }
+    color = colors.get(label.lower(), "#757575")  # grå som fallback
+    # Return a HTML span badge
+    return f"""<span style="
+        background-color: {color};
+        color: white;
+        padding: 6px 12px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-family: monospace;
+        display: inline-block;
+        min-width: 80px;
+        text-align: center;
+    ">{label.upper()}</span>"""
+
 with gr.Blocks(title="Sensifilter Analyzer") as demo:
     gr.Markdown("🧪 **Sensifilter Analyzer (Gradio Edition)**")
 
@@ -69,7 +85,7 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             image_annotated = gr.Image(label="🎯 Annotated", type="numpy")
 
     with gr.Row():
-        label_output = gr.Label(label="Label")
+        label_output = gr.HTML(label="Label")
         caption_output = gr.Textbox(label="Caption")
         scene_output = gr.Textbox(label="Scene")
         skin_output = gr.Number(label="Skin %")
@@ -78,7 +94,14 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
         blip_conf_output = gr.Number(label="BLIP Confidence")
         yolo_skipped_output = gr.Checkbox(label="YOLO Skipped")
 
-    full_output = gr.JSON(label="📋 Full Raw Result", visible=True)
+    full_output = gr.JSON(label="📋 Full Raw Result", visible=False)
+
+    def toggle_raw_result(visible):
+        return not visible
+
+    toggle_button = gr.Button("Toggle Raw Result")
+
+    toggle_button.click(toggle_raw_result, inputs=full_output, outputs=full_output)
 
     run_button.click(
         fn=run_analysis,
@@ -95,6 +118,11 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             yolo_skipped_output,
             full_output,
         ],
+        postprocess=lambda outputs: (
+            outputs[0],  # annotated
+            label_to_badge(outputs[1]),  # label as badge
+            *outputs[2:]
+        )
     )
 
 if __name__ == "__main__":
