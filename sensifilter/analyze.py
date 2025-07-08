@@ -1,9 +1,8 @@
-# analyze.py
-
 import os
 import cv2
 import numpy as np
 from PIL import Image
+import time
 
 print("📦 analyze.py loaded from:", __file__)
 print("🔧 cv2 available:", cv2.__version__)
@@ -16,45 +15,50 @@ ALL_SENSITIVE_KEYWORDS = KEYWORDS_NUDITY + KEYWORDS_VIOLENCE + KEYWORDS_OTHER
 def analyze_image(image_path, settings):
     result = {}
 
-    # === BLIP Captioning (run early for fast filtering) ===
+    # === Optional: timing dictionary for step durations ===
+    timings = {}
+
+    start = time.time()
     try:
         caption_text, confidence = caption.generate_caption(image_path)
         result["caption"] = (caption_text, confidence)
         print(f"📝 Caption: {caption_text} ({confidence:.2f})")
     except Exception as e:
         result["caption"] = (f"Error: {e}", 0.0)
+    timings["caption"] = time.time() - start
 
-    # === Keyword matching based on caption ===
+    start = time.time()
     if settings.get("enable_keyword_filter", True):
         try:
             result["keywords"] = keywords.match_keywords(result["caption"][0], ALL_SENSITIVE_KEYWORDS)
         except Exception as e:
             result["keywords"] = [f"Error: {e}"]
+    timings["keyword_matching"] = time.time() - start
 
-    # === Scene classification ===
+    start = time.time()
     if settings.get("enable_scene_filter", True):
         try:
             result["scene"] = scene.classify_scene(image_path)
         except Exception as e:
             result["scene"] = f"Error: {e}"
+    timings["scene_classification"] = time.time() - start
 
-    # === Pose-based human detection ===
+    start = time.time()
     try:
         result["contains_human"] = pose.contains_human_pose(image_path)
         result["pose"] = "Yes" if result["contains_human"] else "No"
     except Exception as e:
         result["pose"] = f"Error: {e}"
         result["contains_human"] = False
+    timings["pose_detection"] = time.time() - start
 
-    # === YOLO + skin ratio (only if needed) ===
     run_yolo = True
-
-    # Example early exit rule (can be refined later)
-    caption_lc = result["caption"][0].lower()
+    caption_lc = result["caption"][0].lower() if isinstance(result["caption"], (list, tuple)) else ""
     if "mountain" in caption_lc or "landscape" in caption_lc:
         print("🏔️ Detected safe scene in caption. Skipping YOLO.")
         run_yolo = False
 
+    start = time.time()
     if run_yolo:
         try:
             image_bgr = utils.load_image_bgr(image_path)
@@ -100,16 +104,15 @@ def analyze_image(image_path, settings):
         result["skin_human_boxes"] = []
         result["max_skin_ratio"] = 0.0
         result["annotated_image"] = None
+    timings["yolo_skin_detection"] = time.time() - start
 
-    # === Final classification ===
+    result["yolo_skipped"] = not run_yolo
+    result["blip_confidence"] = result["caption"][1] if isinstance(result["caption"], (list, tuple)) else 0.0
+    result["timings"] = timings
+
     try:
         result["label"] = filters.apply_filters(result, settings)
     except Exception as e:
         result["label"] = f"Error: {e}"
-
-        # === Mark if YOLO was skipped ===
-        result["yolo_skipped"] = not run_yolo
-        result["blip_confidence"] = result["caption"][1]
-
 
     return result
