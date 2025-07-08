@@ -131,36 +131,54 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
 
     def postprocess(outputs):
         try:
+            # Bild fallback - se till att alltid vara numpy-array
             annotated = outputs[0]
             if annotated is None:
                 annotated = np.zeros((100, 100, 3), dtype=np.uint8)
             elif hasattr(annotated, 'convert'):  # PIL Image -> numpy
                 annotated = np.array(annotated)
+            elif not isinstance(annotated, np.ndarray):
+                print(f"WARNING: annotated image is of unexpected type: {type(annotated)}. Using fallback.")
+                annotated = np.zeros((100, 100, 3), dtype=np.uint8)
     
+            # Label fallback
             label = outputs[1] or "unknown"
+    
+            # Timing fallback
             timings = outputs[-1] or {}
     
+            # Sanitize other outputs
             sanitized = []
             for o in outputs[2:-2]:
-                sanitized.append(o if o is not None else "")
+                if o is None:
+                    sanitized.append("")
+                elif isinstance(o, (str, bool, int, float)):
+                    sanitized.append(o)
+                else:
+                    sanitized.append(str(o))
     
+            # Render pipeline html and enforce str type
             pipeline_html = render_pipeline(timings, label)
-    
-            # Debug: kontrollera att vi har en sträng och att det ser ut som HTML
-            print(f"DEBUG: pipeline_html type before conversion: {type(pipeline_html)}")
             if not isinstance(pipeline_html, str):
                 pipeline_html = str(pipeline_html)
-            print(f"DEBUG: pipeline_html preview:\n{pipeline_html[:200]}")
     
+            # Sanity debug prints
+            print(f"DEBUG: Annotated type: {type(annotated)}")
+            print(f"DEBUG: Label: {label}")
+            print(f"DEBUG: Pipeline HTML type: {type(pipeline_html)}")
+            print(f"DEBUG: Outputs length: {len(outputs)} Expected outputs: 11")
+    
+            # Return all outputs, ensure last two are dict and str
             return (
                 annotated,
                 label_to_badge(label),
                 *sanitized,
-                outputs[-2] or {},
+                outputs[-2] if isinstance(outputs[-2], dict) else {},
                 pipeline_html,
             )
         except Exception as e:
             print(f"❌ Postprocess error: {e}")
+            # Return safe fallback for all outputs
             return (
                 np.zeros((100, 100, 3), dtype=np.uint8),
                 label_to_badge("error"),
