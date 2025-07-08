@@ -4,27 +4,30 @@ import cv2
 import gradio as gr
 from sensifilter import analyze
 
-# === Globala inställningar ===
+# === Global settings ===
 DEFAULT_SETTINGS = {
     "enable_scene_filter": True,
     "enable_caption_filter": True,
     "enable_keyword_filter": True,
 }
 
+# === Main analysis function ===
 def run_analysis(image_path):
     print(f"📷 Received image: {image_path}")
     result = analyze.analyze_image(image_path, DEFAULT_SETTINGS)
 
     annotated = result.get("annotated_image")
 
-    # === Extrahera övriga resultat ===
+    # Extract results
     caption_text = result.get("caption", [""])[0]
     scene = result.get("scene", "")
     pose = result.get("pose", "")
     contains_human = result.get("contains_human", False)
     label = result.get("label", "")
+    blip_confidence = result.get("blip_confidence", 0.0)
+    yolo_skipped = result.get("yolo_skipped", False)
 
-    # Beräkna total skin %
+    # Calculate total skin % from all boxes
     try:
         boxes = result.get("skin_human_boxes", [])
         total_pixels = 0
@@ -36,10 +39,7 @@ def run_analysis(image_path):
             skin_pixels = skin_ratio * area
             total_pixels += area
             total_skin_pixels += skin_pixels
-        if total_pixels > 0:
-            skin_percent = round((total_skin_pixels / total_pixels) * 100, 2)
-        else:
-            skin_percent = 0.0
+        skin_percent = round((total_skin_pixels / total_pixels) * 100, 2) if total_pixels > 0 else 0.0
     except:
         skin_percent = 0.0
 
@@ -51,9 +51,12 @@ def run_analysis(image_path):
         skin_percent,
         pose,
         contains_human,
+        blip_confidence,
+        yolo_skipped,
         result
     )
 
+# === UI setup ===
 with gr.Blocks(title="Sensifilter Analyzer") as demo:
     gr.Markdown("🧪 **Sensifilter Analyzer (Gradio Edition)**")
 
@@ -72,6 +75,8 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
         skin_output = gr.Number(label="Skin %")
         pose_output = gr.Textbox(label="Pose")
         human_output = gr.Checkbox(label="Contains Human")
+        blip_conf_output = gr.Number(label="BLIP Confidence")
+        yolo_skipped_output = gr.Checkbox(label="YOLO Skipped")
 
     full_output = gr.JSON(label="📋 Full Raw Result", visible=True)
 
@@ -86,8 +91,10 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
             skin_output,
             pose_output,
             human_output,
-            full_output
-        ]
+            blip_conf_output,
+            yolo_skipped_output,
+            full_output,
+        ],
     )
 
 if __name__ == "__main__":
