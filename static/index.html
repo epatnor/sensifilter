@@ -1,0 +1,38 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sensifilter UI</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <script defer src="main.js"></script>
+</head>
+<body class="bg-gray-900 text-white font-sans">
+  <div class="max-w-4xl mx-auto p-4">
+    <h1 class="text-2xl font-bold mb-4">🧪 Sensifilter Analyzer</h1>
+
+    <input type="file" id="imageInput" class="mb-4">
+    <button id="analyzeBtn" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">Run Analysis</button>
+
+    <div id="resultArea" class="mt-6 space-y-3 hidden">
+      <div><strong>Label:</strong> <span id="label"></span></div>
+      <div><strong>Caption:</strong> <span id="caption"></span></div>
+      <div><strong>Scene:</strong> <span id="scene"></span></div>
+      <div><strong>Skin %:</strong> <span id="skin"></span></div>
+      <div><strong>Pose:</strong> <span id="pose"></span></div>
+      <div><strong>Contains Human:</strong> <span id="human"></span></div>
+      <div><strong>BLIP Confidence:</strong> <span id="blip"></span></div>
+      <div><strong>YOLO Skipped:</strong> <span id="yolo"></span></div>
+      <div>
+        <strong>Pipeline:</strong>
+        <div id="pipeline" class="mt-2"></div>
+      </div>
+      <div>
+        <strong>Annotated Image:</strong>
+        <img id="annotatedImage" class="mt-2 border rounded">
+      </div>
+    </div>
+  </div>
+</body>
+</html>
