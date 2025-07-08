@@ -160,14 +160,21 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
                 outputs[-2] if isinstance(outputs[-2], dict) else {},
                 pipeline_html,
             )
+            
         except Exception as e:
             print(f"❌ Postprocess error: {e}")
             return (
-                np.zeros((100, 100, 3), dtype=np.uint8),
-                label_to_badge("error"),
-                *[""] * (len(outputs) - 4),
-                {},
-                "",
+                np.zeros((100, 100, 3), dtype=np.uint8),  # image_annotated
+                label_to_badge("error"),                  # label_output
+                "",                                       # caption
+                "",                                       # scene
+                0.0,                                      # skin_percent
+                "",                                       # pose
+                False,                                    # contains_human
+                0.0,                                      # blip_confidence
+                False,                                    # yolo_skipped
+                {},                                       # full_output
+                render_pipeline_preview(),               # pipeline_status
             )
 
     run_button.click(
