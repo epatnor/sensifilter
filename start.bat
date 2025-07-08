@@ -16,19 +16,19 @@ IF NOT EXIST .venv (
 )
 
 REM === Install requirements if needed ===
-.\.venv\Scripts\python.exe -m pip show gradio >nul 2>&1
+.\.venv\Scripts\python.exe -m pip show fastapi >nul 2>&1
 IF %ERRORLEVEL% NEQ 0 (
     echo 📦 Installing requirements...
     .\.venv\Scripts\python.exe -m pip install --upgrade pip
     .\.venv\Scripts\pip.exe install -r requirements.txt
 )
 
-REM === Start Gradio app ===
+REM === Start FastAPI app ===
 echo.
-echo ✅ Environment ready. Launching UI...
-.\.venv\Scripts\python.exe app_gradio.py
+echo ✅ Environment ready. Launching Sensifilter web UI...
+.\.venv\Scripts\uvicorn.exe main:app --reload --host 127.0.0.1 --port 8000
 
 echo.
-echo Gradio UI closed. Press any key to exit.
+echo Server closed. Press any key to exit.
 pause
 ENDLOCAL
