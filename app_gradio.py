@@ -54,7 +54,10 @@ def run_analysis(image_path):
     except:
         skin_percent = 0.0
 
+    # Konvertera timings till vanliga python-typer för säker HTML-rendering i Gradio
     timings = result.get("timings", {})
+    timings_clean = {str(k): float(v) if isinstance(v, (float, int)) else 0.0 for k, v in timings.items()}
+
     return (
         annotated,
         label,
@@ -66,7 +69,7 @@ def run_analysis(image_path):
         blip_confidence,
         yolo_skipped,
         result,
-        timings,
+        timings_clean,
     )
 
 
@@ -91,14 +94,12 @@ def label_to_badge(label):
 
 
 def render_pipeline(timings, label):
-    # Determine index where the image is judged safe (or label fallback)
     label_lc = label.lower()
     if label_lc == "safe":
         safe_index = len(STEP_NAMES)
     elif label_lc == "review":
         safe_index = len(STEP_NAMES) - 1
     else:
-        # Assume sensitive failed on last step for demo
         safe_index = len(STEP_NAMES) - 2
 
     html_lines = []
@@ -106,8 +107,8 @@ def render_pipeline(timings, label):
         passed = i < safe_index
         color = "#4CAF50" if passed else "#888888"
         icon = "✅" if passed else "⏺️"
-        # Fetch timing or zero
-        timing = timings.get(step.lower().replace(" & ", "_").replace(" ", "_"), 0.0)
+        timing_key = step.lower().replace(" & ", "_").replace(" ", "_")
+        timing = timings.get(timing_key, 0.0)
         html_lines.append(
             f'<div style="color:{color}; font-weight:600; margin-bottom:4px;">'
             f'{icon} {step} <small style="font-weight:normal; color:#555;">({timing:.2f}s)</small></div>'
@@ -149,7 +150,6 @@ with gr.Blocks(title="Sensifilter Analyzer") as demo:
     )
 
     def postprocess(outputs):
-        # outputs = (annotated, label, caption_text, scene, skin, pose, human, blip_conf, yolo_skipped, result, timings)
         annotated = outputs[0]
         label = outputs[1]
         timings = outputs[-1]
